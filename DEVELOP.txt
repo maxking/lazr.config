@@ -1,0 +1,59 @@
+This project uses zc.buildout for development.
+
+To develop or run tests, first run ``$DESIRED_PYTHON bootstrap.py`` in this
+directory, where you replace ``$DESIRED_PYTHON`` with the python that should
+be used to build and run this project. A non-system Python is highly
+recommended, but not required.
+
+Then run ``./bin/buildout``.  (NOTE: Ubuntu Intrepid users, see bottom of this
+document if this generates errors.)
+
+You can now run tests with ``./bin/test``.  Use ``./bin/test --help`` to read
+about the many options.
+
+To gain access to a Python interpreter with the package and its dependent eggs
+available, use ``./bin/py``.
+
+You can generate ctags and idutils files for a variety of editors using
+``./bin/tags`` (see ``./bin/tags --help``). The advantage of the files
+generated from this utility is that they include the sourcecode from the eggs
+used in this buildout.
+
+To generate distributions, use ``./bin/buildout setup . SETUP_CMD [...]``.
+That is, you can use ``./bin/buildout setup .`` as if it were
+``python setup.py``.  The intended advantage is easy access to a pristine,
+local version of setuptools.
+
+Every project using zc.buildout will keep its own collection of eggs by
+default.  You may want to cache these eggs, and their downloaded
+distributions, globally.  To do so, perform the following instructions.
+
+- ``mkdir -p ~/.buildout/eggs``
+- ``mkdir ~/.buildout/download-cache``
+- Create ``~/.buildout/default.cfg`` with the following content, replacing
+  "$HOME" with the path to your home::
+
+    [buildout]
+    eggs-directory=$HOME/.buildout/eggs
+    download-cache=$HOME/.buildout/download-cache
+
+Ubunutu Intrepid Problem
+========================
+
+Intrepid has a bug working with buildout.  You may have to hack to fix it.
+Here's an example of the Python 2.4 version of the hack.
+
+$ sudo rm  /usr/lib/python2.4/site-packages/GMenuSimpleEditor/*.py
+$ sudo ln
+-s /var/lib/python-support/python2.4/GMenuSimpleEditor/*.py /usr/lib/python2.4/site-packages/GMenuSimpleEditor/
+
+Python 2.5 would need the same kind of fix (replace all three instances of
+"python2.4" with "python2.5" in the above).
+
+The author of this document tried an Intrepid upgrade and an aptitude
+reinstall of python-gmenu to no avail before doing the rough-and-tumble change
+described above.
+
+See
+https://bugs.edge.launchpad.net/ubuntu/+source/gnome-menus/+bug/301571 and the
+bug linked to it by datakid.
