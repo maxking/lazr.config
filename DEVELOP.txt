@@ -43,7 +43,7 @@ distributions, globally.  To do so, perform the following instructions.
     eggs-directory=$HOME/.buildout/eggs
     download-cache=$HOME/.buildout/download-cache
 
-Working With Unreleased Packages
+Working with Unreleased Packages
 ================================
 
 You may want to develop with an unreleased distribution of another package.
