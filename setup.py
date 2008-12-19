@@ -33,7 +33,7 @@ def generate(*docname_or_string):
 
 setup(
     name='lazr.config',
-    version='1.0b1',
+    version='1.0',
     namespace_packages=['lazr'],
     packages=find_packages('src'),
     package_dir={'':'src'},
