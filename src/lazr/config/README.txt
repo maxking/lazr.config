@@ -791,6 +791,24 @@ The 'section_1' section was restored to the schema's default values.
     key4 : F&#028c;k yeah!
     key5 :
 
+push() can also be used to extend master sections.
+
+    >>> for section in master_conf.getByCategory('bar'):
+    ...     print section.name, section.baz
+    bar.master 1
+
+    >>> master_conf.push('override', """
+    ... [bar.two]
+    ... baz: 2
+    ...
+    ... [bar.three]
+    ... baz:3
+    ... """)
+    >>> for section in master_conf.getByCategory('bar'):
+    ...     print section.name, section.baz
+    bar.two 2
+    bar.three 3    
+
 
 pop()
 =====
