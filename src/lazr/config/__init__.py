@@ -210,9 +210,15 @@ class ConfigSchema:
 
     _section_factory = Section
 
-    def __init__(self, filename):
+    def __init__(self, filename, file_object=None):
         """Load a configuration schema from the provided filename.
 
+        :param filename: The name of the file to load from, or if
+            `file_object` is given, to pretend to load from.
+        :type filename: string
+        :param file_object: If given, optional file-like object to read from
+            instead of actually opening the named file.
+        :type file_object: An object with a readline() method.
         :raise `UnicodeDecodeError`: if the string contains non-ascii
             characters.
         :raise `RedefinedSectionError`: if a SectionSchema name is redefined.
@@ -226,11 +232,13 @@ class ConfigSchema:
         self.name = basename(filename)
         self._section_schemas = {}
         self._category_names = []
-        raw_schema = self._getRawSchema(filename)
+        if file_object is None:
+            raw_schema = self._getRawSchema(filename)
+        else:
+            raw_schema = file_object
         parser = RawConfigParser()
         parser.readfp(raw_schema, filename)
         self._setSectionSchemasAndCategoryNames(parser)
-
 
     def _getRawSchema(self, filename):
         """Return the contents of the schema at filename as a StringIO.
