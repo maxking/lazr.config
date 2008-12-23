@@ -79,11 +79,35 @@ required. Lines that start with a hash (#) are comments.
     >>> schema.filename
     '...lazr/config/testdata/base.conf'
 
+If you provide an optional file-like object as a second argument to the
+constructor, that is used instead of opening the named file implicitly.
+
+    >>> file_object = open(base_conf)
+    >>> other_schema = ConfigSchema('/does/not/exist.conf', file_object)
+    >>> verifyObject(IConfigSchema, other_schema)
+    True
+
+    >>> print other_schema.name
+    exist.conf
+    >>> print other_schema.filename
+    /does/not/exist.conf
+
+    >>> file_object.close()
+
 A schema is made up of multiple SchemaSections. They can be iterated
 over in a loop as needed.
 
     >>> from operator import attrgetter
     >>> for section_schema in sorted(schema, key=attrgetter('name')):
+    ...     print section_schema.name
+    section-2.app-b
+    section-5
+    section_1
+    section_3.app_a
+    section_3.app_b
+    section_33
+
+    >>> for section_schema in sorted(other_schema, key=attrgetter('name')):
     ...     print section_schema.name
     section-2.app-b
     section-5
