@@ -38,6 +38,8 @@ from lazr.config.interfaces import (
     UnknownSectionError)
 from lazr.delegates import delegates
 
+_missing = object()
+
 
 def read_content(filename):
     """Return the content of a file at filename as a string."""
@@ -345,10 +347,12 @@ class ConfigSchema:
         except KeyError:
             raise NoSectionError(name)
 
-    def getByCategory(self, name):
+    def getByCategory(self, name, default=_missing):
         """See `IConfigSchema`."""
         if name not in self.category_names:
-            raise NoCategoryError(name)
+            if default is _missing:
+                raise NoCategoryError(name)
+            return default
         section_schemas = []
         for key in self._section_schemas:
             section = self._section_schemas[key]
@@ -444,10 +448,12 @@ class ConfigData:
         except KeyError:
             raise NoSectionError(name)
 
-    def getByCategory(self, name):
+    def getByCategory(self, name, default=_missing):
         """See `IConfigData`."""
         if name not in self.category_names:
-            raise NoCategoryError(name)
+            if default is _missing:
+                raise NoCategoryError(name)
+            return default
         sections = []
         for key in self._sections:
             section = self._sections[key]
