@@ -12,7 +12,9 @@ __all__ = [
     'ImplicitTypeSection',
     'Section',
     'SectionSchema',
+    'as_boolean',
     'as_host_port',
+    'as_log_level',
     'as_timedelta',
     'as_username_groupname',
     ]
@@ -21,6 +23,7 @@ __all__ = [
 import StringIO
 import datetime
 import grp
+import logging
 import os
 import pwd
 import re
@@ -660,6 +663,25 @@ class Category:
         raise AttributeError("No section named %s." % name)
 
 
+def as_boolean(value):
+    """Turn a string into a boolean.
+
+    :param value: A string with one of the following values
+        (case-insensitive): true, yes, 1, on, enable, enabled (for True), or
+        false, no, 0, off, disable, disabled (for False).  Everything else is
+        an error.
+    :type value: string
+    :return: True or False.
+    :rtype: boolean
+    """
+    value = value.lower()
+    if value in ('true', 'yes', '1', 'on', 'enabled', 'enable'):
+        return True
+    if value in ('false', 'no', '0', 'off', 'disabled', 'disable'):
+        return False
+    raise ValueError('Invalid boolean value: %s' % value)
+
+
 def as_host_port(value, default_host='localhost', default_port=25):
     """Return a 2-tuple of (host, port) from a value like 'host:port'.
 
@@ -752,3 +774,15 @@ def as_timedelta(value):
     if len(keyword_arguments) == 0:
         raise ValueError
     return datetime.timedelta(**keyword_arguments)
+
+def as_log_level(value):
+    """Turn a string into a log level.
+    
+    :param value: A string with a value (case-insensitive) equal to one of the
+        symbolic logging levels.
+    :type value: string
+    :return: A logging level constant.
+    :rtype: int
+    """
+    value = value.upper()
+    return getattr(logging, value)
