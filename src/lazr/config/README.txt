@@ -1113,7 +1113,7 @@ not an integer.
     >>> as_host_port(':foo')
     Traceback (most recent call last):
     ...
-    ValueError: invalid literal for int...: 'foo'
+    ValueError: invalid literal for int...foo...
 
 User and group
 ==============
