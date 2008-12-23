@@ -1103,6 +1103,60 @@ lazr.config provides a few helpers for doing explicit type conversion.  These
 functions have to be imported and called explicitly on the configuration
 variable values.
 
+Booleans
+========
+
+There is a helper for turning various strings into the boolean values True and
+False.
+
+    >>> from lazr.config import as_boolean
+
+True values include (case-insensitively): true, yes, 1, on, enabled, and
+enable.
+
+    >>> for value in ('true', 'yes', 'on', 'enable', 'enabled', '1'):
+    ...     print value, '->', as_boolean(value)
+    ...     print value.upper(), '->', as_boolean(value.upper())
+    true -> True
+    TRUE -> True
+    yes -> True
+    YES -> True
+    on -> True
+    ON -> True
+    enable -> True
+    ENABLE -> True
+    enabled -> True
+    ENABLED -> True
+    1 -> True
+    1 -> True
+
+False values include (case-insensitively): false, no, 0, off, disabled, and
+disable.
+
+    >>> for value in ('false', 'no', 'off', 'disable', 'disabled', '0'):
+    ...     print value, '->', as_boolean(value)
+    ...     print value.upper(), '->', as_boolean(value.upper())
+    false -> False
+    FALSE -> False
+    no -> False
+    NO -> False
+    off -> False
+    OFF -> False
+    disable -> False
+    DISABLE -> False
+    disabled -> False
+    DISABLED -> False
+    0 -> False
+    0 -> False
+
+Anything else is a error.
+
+    >>> as_boolean('cheese')
+    Traceback (most recent call last):
+    ...
+    ValueError: Invalid boolean value: cheese
+
+
 Host and port
 =============
 
@@ -1264,3 +1318,37 @@ But doesn't accept 'weird' or duplicate combinations.
     Traceback (most recent call last):
     ...
     ValueError
+
+Log levels
+==========
+
+It's convenient to be able to use symbolic log level names when using
+lazr.config to configure the Python logger.
+
+    >>> from lazr.config import as_log_level
+
+Any symbolic log level value is valid to use, case insensitively.
+
+    >>> for value in ('critical', 'error', 'warning', 'info',
+    ...               'debug', 'notset'):
+    ...     print value, '->', as_log_level(value)
+    ...     print value.upper(), '->', as_log_level(value.upper())
+    critical -> 50
+    CRITICAL -> 50
+    error -> 40
+    ERROR -> 40
+    warning -> 30
+    WARNING -> 30
+    info -> 20
+    INFO -> 20
+    debug -> 10
+    DEBUG -> 10
+    notset -> 0
+    NOTSET -> 0
+
+Non-log levels cannot be used here.
+
+    >>> as_log_level('cheese')
+    Traceback (most recent call last):
+    ...
+    AttributeError: 'module' object has no attribute 'CHEESE'
