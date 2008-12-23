@@ -139,6 +139,13 @@ An error is raised when accessing a category does not exist.
       ...
     NoCategoryError: ...
 
+You can pass a default argument to getByCategory() to avoid the exception.
+
+    >>> missing = object()
+    >>> schema.getByCategory('non-section', missing) is missing
+    True
+    
+
 =============
 SchemaSection
 =============
@@ -480,6 +487,13 @@ NoCategoryError.
     Traceback (most recent call last):
       ...
     NoCategoryError: ...
+
+As with schemas, you can pass a default argument to getByCategory() to avoid
+the exception.
+
+    >>> missing = object()
+    >>> config.getByCategory('non-section', missing) is missing
+    True
 
 =======
 Section
