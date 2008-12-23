@@ -22,7 +22,11 @@ __all__ = [
     'UnknownKeyError',
     'UnknownSectionError']
 
+from warnings import filterwarnings
 from zope.interface import Interface, Attribute
+
+# Ignore Python 2.6 deprecation warnings.
+filterwarnings('ignore', category=DeprecationWarning, module=r'lazr\.config')
 
 
 class ConfigSchemaError(Exception):
@@ -67,6 +71,7 @@ class ConfigErrors(ConfigSchemaError):
         :param message: a message string
         :param errors: a list of errors in the config, or None
         """
+        # Without the suppression above, this produces a warning in Python 2.6.
         self.message = message
         self.errors = errors
 
@@ -128,9 +133,11 @@ class IConfigSchema(Interface):
     The config file contains sections enclosed in square brackets ([]).
     The section name may be divided into major and minor categories using a
     dot (.). Beneath each section is a list of key-value pairs, separated
-    by a colon (:). Multiple sections with the same major category may have
-    their keys defined in another section that appends the '.template'
-    suffix to the category name. A section with '.optional' suffix is not
+    by a colon (:).
+
+    Multiple sections with the same major category may have their keys defined
+    in another section that appends the '.template' or '.master' suffixes to
+    the category name. A section with '.optional' suffix is not
     required. Lines that start with a hash (#) are comments.
     """
     name = Attribute('The basename of the config filename.')

@@ -368,6 +368,23 @@ key that declares that this conf extends shared.conf.
     # Accept the default values for the optional section-5.
     [section-5]
 
+If the schema defines .master sections, then the conf file can contain
+sections that extend the .master section.  These are like categories with
+templates except that the section names extending .master need not be named in
+the schema file.
+
+    >>> master_schema_conf = path.join(testfiles_dir,  'master.conf')
+    >>> master_local_conf = path.join(testfiles_dir,  'master-local.conf')
+    >>> master_schema = ConfigSchema(master_schema_conf)
+    >>> len(master_schema.getByCategory('thing'))
+    0
+    >>> master_conf = master_schema.load(master_local_conf)
+    >>> sections = master_conf.getByCategory('thing')
+    >>> sorted(section.name for section in sections)
+    ['thing.one', 'thing.two']
+    >>> sorted(section.foo for section in sections)
+    ['1', '2']
+
 The shared.conf file derives the keys and default values from the
 schema. This config was loaded before local.conf because its sections
 and values are required to be in place before local.conf applies its
@@ -1096,7 +1113,7 @@ not an integer.
     >>> as_host_port(':foo')
     Traceback (most recent call last):
     ...
-    ValueError: invalid literal for int(): foo
+    ValueError: invalid literal for int...: 'foo'
 
 User and group
 ==============

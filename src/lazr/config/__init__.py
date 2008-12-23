@@ -53,7 +53,7 @@ class SectionSchema:
     """See `ISectionSchema`."""
     implements(ISectionSchema)
 
-    def __init__(self, name, options, is_optional=False):
+    def __init__(self, name, options, is_optional=False, is_master=False):
         """Create an `ISectionSchema` from the name and options.
 
         :param name: A string. The name of the ISectionSchema.
@@ -66,6 +66,7 @@ class SectionSchema:
         self.name = name
         self._options = options
         self.optional = is_optional
+        self.master = is_master
 
     def __iter__(self):
         """See `ISectionSchema`"""
@@ -87,9 +88,15 @@ class SectionSchema:
         else:
             return (None, self.name)
 
+    def clone(self):
+        """Return a copy of this section schema."""
+        return self.__class__(self.name, self._options.copy(),
+                              self.optional, self.master)
+
 
 class Section:
     """See `ISection`."""
+
     implements(ISection)
     delegates(ISectionSchema, context='schema')
 
@@ -101,7 +108,7 @@ class Section:
         # Use __dict__ because __getattr__ limits access to self.options.
         self.__dict__['schema'] = schema
         if _options is None:
-            _options = dict([(key, schema[key]) for key in schema])
+            _options = dict((key, schema[key]) for key in schema)
         self.__dict__['_options'] = _options
 
     def __getitem__(self, key):
@@ -231,7 +238,6 @@ class ConfigSchema:
         parser.readfp(raw_schema, filename)
         self._setSectionSchemasAndCategoryNames(parser)
 
-
     def _getRawSchema(self, filename):
         """Return the contents of the schema at filename as a StringIO.
 
@@ -254,22 +260,24 @@ class ConfigSchema:
         """Set the SectionSchemas and category_names from the config."""
         category_names = set()
         templates = {}
-        # Retrieve all the templates first because section() does not
-        # follow the order of the conf file.
+        # Retrieve all the templates first because section() does not follow
+        # the order of the conf file.
         for name in parser.sections():
             (section_name, category_name,
-             is_template, is_optional) = self._parseSectionName(name)
+             is_template, is_optional,
+             is_master) = self._parseSectionName(name)
             if is_template:
                 templates[category_name] = dict(parser.items(name))
         for name in parser.sections():
             (section_name, category_name,
-             is_template, is_optional) = self._parseSectionName(name)
+             is_template, is_optional,
+             is_master) = self._parseSectionName(name)
             if is_template:
                 continue
             options = dict(templates.get(category_name, {}))
             options.update(parser.items(name))
             self._section_schemas[section_name] = SectionSchema(
-                section_name, options, is_optional)
+                section_name, options, is_optional, is_master)
             if category_name is not None:
                 category_names.add(category_name)
         self._category_names = list(category_names)
@@ -277,7 +285,7 @@ class ConfigSchema:
     _section_name_pattern = re.compile(r'\w[\w.-]+\w')
 
     def _parseSectionName(self, name):
-        """Return a 4-tuple of names and kinds embedded in the name.
+        """Return a tuple of names and kinds embedded in the name.
 
         :return: (section_name, category_name, is_template, is_optional).
             section_name is always a string. category_name is a string or
@@ -288,6 +296,7 @@ class ConfigSchema:
         name_parts = name.split('.')
         is_template = name_parts[-1] == 'template'
         is_optional = name_parts[-1] == 'optional'
+        is_master = name_parts[-1] == 'master'
         if is_template or is_optional:
             # The suffix is not a part of the section name.
             # Example: [name.optional] or [category.template]
@@ -310,7 +319,8 @@ class ConfigSchema:
         if self._section_name_pattern.match(section_name) is None:
             raise InvalidSectionNameError(
                 '[%s] name does not match [\w.-]+.' % name)
-        return (section_name, category_name,  is_template, is_optional)
+        return (section_name, category_name,
+                is_template, is_optional, is_master)
 
     @property
     def section_factory(self):
@@ -344,6 +354,8 @@ class ConfigSchema:
         section_schemas = []
         for key in self._section_schemas:
             section = self._section_schemas[key]
+            if section.master:
+                continue
             category, dummy = section.category_and_section_names
             if name == category:
                 section_schemas.append(section)
@@ -515,9 +527,9 @@ class Config:
             self._overlays = (config_data, ) + self._overlays
 
     def _getExtendedConfs(self, conf_filename, conf_data, confs=None):
-        """Return a list of 3-tuple(conf_name, parser, encoding_errors).
+        """Return a list of tuple (conf_name, parser, encoding_errors).
 
-        :param conf_filename: The path and name the conf file.
+        :param conf_filename: The path and name of the conf file.
         :param conf_data: Unparsed config data.
         :param confs: A list of confs that extend filename.
         :return: A list of confs ordered from extender to extendee.
@@ -551,7 +563,7 @@ class Config:
         :return: a new ConfigData object.
 
         This method extracts the sections, keys, and values from the parser
-        to construct a new ConfigData object The list of encoding errors are
+        to construct a new ConfigData object. The list of encoding errors are
         incorporated into the the list of data-related errors for the
         ConfigData.
         """
@@ -561,15 +573,34 @@ class Config:
         errors = list(self.data._errors)
         errors.extend(encoding_errors)
         extends = None
+        masters = set()
         for section_name in parser.sections():
             if section_name == 'meta':
                 extends, meta_errors = self._loadMetaData(parser)
                 errors.extend(meta_errors)
                 continue
-            if (section_name.endswith('.template')
-                or section_name.endswith('.optional')):
+            if (section_name.endswith('.template') or
+                section_name.endswith('.optional')):
                 # This section is a schema directive.
                 continue
+            # Check for sections which extend .masters.
+            if '.' in section_name:
+                category, section = section_name.split('.')
+                master_name = category + '.master'
+                try:
+                    section_schema = self.schema[master_name]
+                except NoSectionError:
+                    # There's no master for this section.
+                    pass
+                else:
+                    if section_schema.master:
+                        schema = section_schema.clone()
+                        schema.name = section_name
+                        section = self.schema.section_factory(schema)
+                        section.update(parser.items(section_name))
+                        sections[section_name] = section
+                        masters.add(master_name)
+                        continue
             if section_name not in self.schema:
                 # Any section not in the the schema is an error.
                 msg = "%s does not have a %s section." % (
@@ -585,6 +616,9 @@ class Config:
             items = parser.items(section_name)
             section_errors = sections[section_name].update(items)
             errors.extend(section_errors)
+        # Remove any master sections.
+        for master in masters:
+            del sections[master]
         return ConfigData(conf_name, sections, extends, errors)
 
     def _verifyEncoding(self, config_data):
