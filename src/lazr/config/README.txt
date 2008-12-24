@@ -399,22 +399,26 @@ key that declares that this conf extends shared.conf.
     # Accept the default values for the optional section-5.
     [section-5]
 
-If the schema defines .master sections, then the conf file can contain
-sections that extend the .master section.  These are like categories with
-templates except that the section names extending .master need not be named in
-the schema file.
+The .master section allows admins to define configurations for an arbitrary
+number of processes.  If the schema defines .master sections, then the conf
+file can contain sections that extend the .master section.  These are like
+categories with templates except that the section names extending .master need
+not be named in the schema file.
 
     >>> master_schema_conf = path.join(testfiles_dir,  'master.conf')
     >>> master_local_conf = path.join(testfiles_dir,  'master-local.conf')
     >>> master_schema = ConfigSchema(master_schema_conf)
-    >>> len(master_schema.getByCategory('thing'))
-    0
+    >>> sections = master_schema.getByCategory('thing')
+    >>> sorted(section.name for section in sections)
+    ['thing.master']
     >>> master_conf = master_schema.load(master_local_conf)
     >>> sections = master_conf.getByCategory('thing')
     >>> sorted(section.name for section in sections)
     ['thing.one', 'thing.two']
     >>> sorted(section.foo for section in sections)
     ['1', '2']
+    >>> print master_conf.thing.one.name
+    thing.one
 
 The shared.conf file derives the keys and default values from the
 schema. This config was loaded before local.conf because its sections
@@ -828,6 +832,38 @@ The 'section_1' section was restored to the schema's default values.
     key3 : Launchpad&nbsp;rocks
     key4 : F&#028c;k yeah!
     key5 :
+
+push() can also be used to extend master sections.
+
+    >>> sections = sorted(master_conf.getByCategory('bar'),
+    ...                   key=attrgetter('name'))
+    >>> for section in sections:
+    ...     print section.name, section.baz
+    bar.master badger
+    bar.soup cougar
+
+    >>> master_conf.push('override', """
+    ... [bar.two]
+    ... baz: dolphin
+    ... """)
+    >>> sections = sorted(master_conf.getByCategory('bar'),
+    ...                   key=attrgetter('name'))
+    >>> for section in sections:
+    ...     print section.name, section.baz
+    bar.soup cougar
+    bar.two dolphin
+
+    >>> master_conf.push('overlord', """    
+    ... [bar.three]
+    ... baz: emu
+    ... """)
+    >>> sections = sorted(master_conf.getByCategory('bar'),
+    ...                   key=attrgetter('name'))
+    >>> for section in sections:
+    ...     print section.name, section.baz
+    bar.soup cougar
+    bar.three emu
+    bar.two dolphin
 
 
 pop()
