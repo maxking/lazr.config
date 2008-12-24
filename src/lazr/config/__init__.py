@@ -153,14 +153,7 @@ class Section:
         The extension mechanism requires a copy of a section to prevent
         mutation.
         """
-        new_section = self.__class__(self.schema, self._options.copy())
-        # XXX 2008-06-10 jamesh bug=237827:
-        # Evil legacy code sometimes assigns directly to the config
-        # section objects.  Copy those attributes over.
-        new_section.__dict__.update(
-            dict((key, value) for (key, value) in self.__dict__.iteritems()
-                 if key not in ['schema', '_options']))
-        return new_section
+        return self.__class__(self.schema, self._options.copy())
 
 
 class ImplicitTypeSection(Section):
@@ -266,7 +259,7 @@ class ConfigSchema:
             (section_name, category_name,
              is_template, is_optional,
              is_master) = self._parseSectionName(name)
-            if is_template:
+            if is_template or is_master:
                 templates[category_name] = dict(parser.items(name))
         for name in parser.sections():
             (section_name, category_name,
@@ -354,8 +347,6 @@ class ConfigSchema:
         section_schemas = []
         for key in self._section_schemas:
             section = self._section_schemas[key]
-            if section.master:
-                continue
             category, dummy = section.category_and_section_names
             if name == category:
                 section_schemas.append(section)
@@ -616,9 +607,10 @@ class Config:
             items = parser.items(section_name)
             section_errors = sections[section_name].update(items)
             errors.extend(section_errors)
-        # Remove any master sections.
+        # master sections are like templates.  They show up in the schema but
+        # not in the config.
         for master in masters:
-            del sections[master]
+            sections.pop(master, None)
         return ConfigData(conf_name, sections, extends, errors)
 
     def _verifyEncoding(self, config_data):
