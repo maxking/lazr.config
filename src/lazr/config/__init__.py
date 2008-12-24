@@ -571,7 +571,8 @@ class Config:
                 errors.extend(meta_errors)
                 continue
             if (section_name.endswith('.template') or
-                section_name.endswith('.optional')):
+                section_name.endswith('.optional') or
+                section_name.endswith('.master')):
                 # This section is a schema directive.
                 continue
             # Check for sections which extend .masters.
@@ -581,17 +582,18 @@ class Config:
                 try:
                     section_schema = self.schema[master_name]
                 except NoSectionError:
-                    # There's no master for this section.
+                    # There's no master for this section, so just treat it
+                    # like a regular category.
                     pass
                 else:
-                    if section_schema.master:
-                        schema = section_schema.clone()
-                        schema.name = section_name
-                        section = self.schema.section_factory(schema)
-                        section.update(parser.items(section_name))
-                        sections[section_name] = section
-                        masters.add(master_name)
-                        continue
+                    assert section_schema.master, '.master is not a master?'
+                    schema = section_schema.clone()
+                    schema.name = section_name
+                    section = self.schema.section_factory(schema)
+                    section.update(parser.items(section_name))
+                    sections[section_name] = section
+                    masters.add(master_name)
+                    continue
             if section_name not in self.schema:
                 # Any section not in the the schema is an error.
                 msg = "%s does not have a %s section." % (
