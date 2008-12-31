@@ -463,6 +463,9 @@ class ConfigData:
             return default
         sections = []
         for key in self._sections:
+            # This should not return sections which are clones of the master.
+            if key.endswith('.master'):
+                continue
             section = self._sections[key]
             category, dummy = section.category_and_section_names
             if name == category:
@@ -582,7 +585,6 @@ class Config:
         errors = list(self.data._errors)
         errors.extend(encoding_errors)
         extends = None
-        masters = set()
         for section_name in parser.sections():
             if section_name == 'meta':
                 extends, meta_errors = self._loadMetaData(parser)
@@ -610,7 +612,6 @@ class Config:
                     section = self.schema.section_factory(schema)
                     section.update(parser.items(section_name))
                     sections[section_name] = section
-                    masters.add(master_name)
                     continue
             if section_name not in self.schema:
                 # Any section not in the the schema is an error.
@@ -627,10 +628,6 @@ class Config:
             items = parser.items(section_name)
             section_errors = sections[section_name].update(items)
             errors.extend(section_errors)
-        # master sections are like templates.  They show up in the schema but
-        # not in the config.
-        for master in masters:
-            sections.pop(master, None)
         return ConfigData(conf_name, sections, extends, errors)
 
     def _verifyEncoding(self, config_data):

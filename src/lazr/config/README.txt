@@ -839,7 +839,6 @@ push() can also be used to extend master sections.
     ...                   key=attrgetter('name'))
     >>> for section in sections:
     ...     print section.name, section.baz
-    bar.master badger
     bar.soup cougar
 
     >>> master_conf.push('override', """
@@ -864,6 +863,35 @@ push() can also be used to extend master sections.
     bar.soup cougar
     bar.three emu
     bar.two dolphin
+
+push() works with master sections too.
+
+    >>> schema_file = StringIO.StringIO("""\
+    ... [thing.template]
+    ... foo: 0
+    ... bar: 0
+    ... [thing.one]
+    ... """)
+    >>> push_schema = ConfigSchema('schema.cfg', schema_file)
+
+    >>> config_file = StringIO.StringIO("""\
+    ... [thing.one]
+    ... foo: 1
+    ... """)
+    >>> push_config = push_schema.loadFile(config_file, 'config.cfg')
+    >>> print push_config.thing.one.foo
+    1
+    >>> print push_config.thing.one.bar
+    0
+
+    >>> push_config.push('test.cfg', """\
+    ... [thing.one]
+    ... bar: 2
+    ... """)
+    >>> print push_config.thing.one.foo
+    1
+    >>> print push_config.thing.one.bar
+    2
 
 
 pop()
