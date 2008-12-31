@@ -463,9 +463,6 @@ class ConfigData:
             return default
         sections = []
         for key in self._sections:
-            # This should not return sections which are clones of the master.
-            if key.endswith('.master'):
-                continue
             section = self._sections[key]
             category, dummy = section.category_and_section_names
             if name == category:
@@ -585,6 +582,7 @@ class Config:
         errors = list(self.data._errors)
         errors.extend(encoding_errors)
         extends = None
+        masters = set()
         for section_name in parser.sections():
             if section_name == 'meta':
                 extends, meta_errors = self._loadMetaData(parser)
@@ -595,10 +593,22 @@ class Config:
                 section_name.endswith('.master')):
                 # This section is a schema directive.
                 continue
+            # Calculate the section master name.
             # Check for sections which extend .masters.
             if '.' in section_name:
                 category, section = section_name.split('.')
                 master_name = category + '.master'
+            else:
+                master_name = None
+            if (section_name not in self.schema and
+                master_name not in self.schema):
+                # Any section not in the the schema is an error.
+                msg = "%s does not have a %s section." % (
+                    self.schema.name, section_name)
+                errors.append(UnknownSectionError(msg))
+                continue
+            if section_name not in self.data:
+                # Is there a master section?
                 try:
                     section_schema = self.schema[master_name]
                 except NoSectionError:
@@ -612,14 +622,8 @@ class Config:
                     section = self.schema.section_factory(schema)
                     section.update(parser.items(section_name))
                     sections[section_name] = section
+                    masters.add(master_name)
                     continue
-            if section_name not in self.schema:
-                # Any section not in the the schema is an error.
-                msg = "%s does not have a %s section." % (
-                    self.schema.name, section_name)
-                errors.append(UnknownSectionError(msg))
-                continue
-            if section_name not in self.data:
                 # Create the optional section from the schema.
                 section_schema = self.schema[section_name]
                 sections[section_name] = self.schema.section_factory(
@@ -628,6 +632,10 @@ class Config:
             items = parser.items(section_name)
             section_errors = sections[section_name].update(items)
             errors.extend(section_errors)
+        # master sections are like templates.  They show up in the schema but
+        # not in the config.
+        for master in masters:
+            sections.pop(master, None)
         return ConfigData(conf_name, sections, extends, errors)
 
     def _verifyEncoding(self, config_data):
