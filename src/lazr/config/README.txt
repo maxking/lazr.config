@@ -9,6 +9,7 @@ This system uses ini-like file format of section, keys, and values.
 The config file supports inheritance to minimize duplication of
 information across files. The format supports schema validation.
 
+
 ============
 ConfigSchema
 ============
@@ -168,7 +169,7 @@ You can pass a default argument to getByCategory() to avoid the exception.
     >>> missing = object()
     >>> schema.getByCategory('non-section', missing) is missing
     True
-    
+
 
 =============
 SchemaSection
@@ -255,6 +256,7 @@ the new data overlays the template data. This is the case for section
     key2 : changed
     key3 : unique
 
+
 =======================
 ConfigSchema validation
 =======================
@@ -312,6 +314,7 @@ section name.
       ...
     InvalidSectionNameError: [$category.name_part.optional] ...
 
+
 =============
 IConfigLoader
 =============
@@ -360,6 +363,7 @@ does not have a name attribute.
     ...     StringIO.StringIO(bad_data), 'bad conf')
 
 The bad_config example will be used for validation tests.
+
 
 ======
 Config
@@ -540,6 +544,7 @@ the exception.
     >>> config.getByCategory('non-section', missing) is missing
     True
 
+
 =======
 Section
 =======
@@ -639,6 +644,7 @@ Nor can new attributes be added to a section.
      ...
     AttributeError: Config options cannot be set directly.
 
+
 ==================
 Validating configs
 ==================
@@ -666,6 +672,7 @@ errors in the config.
     UnknownKeyError: section_1 does not have a keyn key.
     UnknownKeyError: The meta section does not have a metakey key.
     UnknownSectionError: base.conf does not have a unknown-section section.
+
 
 ===============
 Config overlays
@@ -714,6 +721,7 @@ row. The schema can never be the second item in the overlays stack.
     >>> for config_data in single_config.overlays:
     ...     print config_data.name
     base.conf
+
 
 push()
 ======
@@ -853,7 +861,7 @@ push() can also be used to extend master sections.
     bar.soup cougar
     bar.two dolphin
 
-    >>> master_conf.push('overlord', """    
+    >>> master_conf.push('overlord', """
     ... [bar.three]
     ... baz: emu
     ... """)
@@ -958,6 +966,7 @@ property returns None.
     >>> print config.extends
     None
 
+
 ===============================
 Attribute access to config data
 ===============================
@@ -1014,6 +1023,7 @@ AttributeError.
     Traceback (most recent call last):
       ...
     AttributeError: No section key named non_key.
+
 
 ====================
 Implicit data typing
@@ -1159,6 +1169,7 @@ removed from the beginning/end.
     >>> implicit_config['section_33'].key2
     'multiline value 1\nmultiline value 2'
 
+
 =======================
 Type conversion helpers
 =======================
@@ -1166,6 +1177,7 @@ Type conversion helpers
 lazr.config provides a few helpers for doing explicit type conversion.  These
 functions have to be imported and called explicitly on the configuration
 variable values.
+
 
 Booleans
 ========
@@ -1271,6 +1283,7 @@ not an integer.
     ...
     ValueError: invalid literal for int...foo...
 
+
 User and group
 ==============
 
@@ -1306,6 +1319,7 @@ By default the current user and group names are returned.
     True
     >>> group == grp.getgrgid(os.getgid()).gr_name
     True
+
 
 Time intervals
 ==============
@@ -1382,6 +1396,7 @@ But doesn't accept 'weird' or duplicate combinations.
     Traceback (most recent call last):
     ...
     ValueError
+
 
 Log levels
 ==========
