@@ -1,4 +1,4 @@
-# Copyright 2008 Canonical Ltd.  All rights reserved.
+# Copyright 2008-2009 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config.
 #
@@ -33,7 +33,7 @@ def generate(*docname_or_string):
 
 setup(
     name='lazr.config',
-    version='1.0',
+    version='1.1',
     namespace_packages=['lazr'],
     packages=find_packages('src'),
     package_dir={'':'src'},
