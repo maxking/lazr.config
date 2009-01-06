@@ -1,3 +1,19 @@
+..
+    This file is part of lazr.config.
+
+    lazr.config is free software: you can redistribute it and/or modify it
+    under the terms of the GNU Lesser General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or (at your
+    option) any later version.
+
+    lazr.config is distributed in the hope that it will be useful, but WITHOUT
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+    License for more details.
+
+    You should have received a copy of the GNU Lesser General Public License
+    along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
+
 LAZR config
 ***********
 
@@ -8,6 +24,7 @@ systems on different machines, or under different circumstances.
 This system uses ini-like file format of section, keys, and values.
 The config file supports inheritance to minimize duplication of
 information across files. The format supports schema validation.
+
 
 ============
 ConfigSchema
@@ -79,11 +96,35 @@ required. Lines that start with a hash (#) are comments.
     >>> schema.filename
     '...lazr/config/testdata/base.conf'
 
+If you provide an optional file-like object as a second argument to the
+constructor, that is used instead of opening the named file implicitly.
+
+    >>> file_object = open(base_conf)
+    >>> other_schema = ConfigSchema('/does/not/exist.conf', file_object)
+    >>> verifyObject(IConfigSchema, other_schema)
+    True
+
+    >>> print other_schema.name
+    exist.conf
+    >>> print other_schema.filename
+    /does/not/exist.conf
+
+    >>> file_object.close()
+
 A schema is made up of multiple SchemaSections. They can be iterated
 over in a loop as needed.
 
     >>> from operator import attrgetter
     >>> for section_schema in sorted(schema, key=attrgetter('name')):
+    ...     print section_schema.name
+    section-2.app-b
+    section-5
+    section_1
+    section_3.app_a
+    section_3.app_b
+    section_33
+
+    >>> for section_schema in sorted(other_schema, key=attrgetter('name')):
     ...     print section_schema.name
     section-2.app-b
     section-5
@@ -138,6 +179,13 @@ An error is raised when accessing a category does not exist.
     Traceback (most recent call last):
       ...
     NoCategoryError: ...
+
+You can pass a default argument to getByCategory() to avoid the exception.
+
+    >>> missing = object()
+    >>> schema.getByCategory('non-section', missing) is missing
+    True
+
 
 =============
 SchemaSection
@@ -224,6 +272,7 @@ the new data overlays the template data. This is the case for section
     key2 : changed
     key3 : unique
 
+
 =======================
 ConfigSchema validation
 =======================
@@ -281,6 +330,7 @@ section name.
       ...
     InvalidSectionNameError: [$category.name_part.optional] ...
 
+
 =============
 IConfigLoader
 =============
@@ -330,6 +380,7 @@ does not have a name attribute.
 
 The bad_config example will be used for validation tests.
 
+
 ======
 Config
 ======
@@ -367,6 +418,27 @@ key that declares that this conf extends shared.conf.
     key5: local value
     # Accept the default values for the optional section-5.
     [section-5]
+
+The .master section allows admins to define configurations for an arbitrary
+number of processes.  If the schema defines .master sections, then the conf
+file can contain sections that extend the .master section.  These are like
+categories with templates except that the section names extending .master need
+not be named in the schema file.
+
+    >>> master_schema_conf = path.join(testfiles_dir,  'master.conf')
+    >>> master_local_conf = path.join(testfiles_dir,  'master-local.conf')
+    >>> master_schema = ConfigSchema(master_schema_conf)
+    >>> sections = master_schema.getByCategory('thing')
+    >>> sorted(section.name for section in sections)
+    ['thing.master']
+    >>> master_conf = master_schema.load(master_local_conf)
+    >>> sections = master_conf.getByCategory('thing')
+    >>> sorted(section.name for section in sections)
+    ['thing.one', 'thing.two']
+    >>> sorted(section.foo for section in sections)
+    ['1', '2']
+    >>> print master_conf.thing.one.name
+    thing.one
 
 The shared.conf file derives the keys and default values from the
 schema. This config was loaded before local.conf because its sections
@@ -481,6 +553,14 @@ NoCategoryError.
       ...
     NoCategoryError: ...
 
+As with schemas, you can pass a default argument to getByCategory() to avoid
+the exception.
+
+    >>> missing = object()
+    >>> config.getByCategory('non-section', missing) is missing
+    True
+
+
 =======
 Section
 =======
@@ -580,6 +660,7 @@ Nor can new attributes be added to a section.
      ...
     AttributeError: Config options cannot be set directly.
 
+
 ==================
 Validating configs
 ==================
@@ -607,6 +688,7 @@ errors in the config.
     UnknownKeyError: section_1 does not have a keyn key.
     UnknownKeyError: The meta section does not have a metakey key.
     UnknownSectionError: base.conf does not have a unknown-section section.
+
 
 ===============
 Config overlays
@@ -655,6 +737,7 @@ row. The schema can never be the second item in the overlays stack.
     >>> for config_data in single_config.overlays:
     ...     print config_data.name
     base.conf
+
 
 push()
 ======
@@ -774,6 +857,66 @@ The 'section_1' section was restored to the schema's default values.
     key4 : F&#028c;k yeah!
     key5 :
 
+push() can also be used to extend master sections.
+
+    >>> sections = sorted(master_conf.getByCategory('bar'),
+    ...                   key=attrgetter('name'))
+    >>> for section in sections:
+    ...     print section.name, section.baz
+    bar.master badger
+    bar.soup cougar
+
+    >>> master_conf.push('override', """
+    ... [bar.two]
+    ... baz: dolphin
+    ... """)
+    >>> sections = sorted(master_conf.getByCategory('bar'),
+    ...                   key=attrgetter('name'))
+    >>> for section in sections:
+    ...     print section.name, section.baz
+    bar.soup cougar
+    bar.two dolphin
+
+    >>> master_conf.push('overlord', """
+    ... [bar.three]
+    ... baz: emu
+    ... """)
+    >>> sections = sorted(master_conf.getByCategory('bar'),
+    ...                   key=attrgetter('name'))
+    >>> for section in sections:
+    ...     print section.name, section.baz
+    bar.soup cougar
+    bar.three emu
+    bar.two dolphin
+
+push() works with master sections too.
+
+    >>> schema_file = StringIO.StringIO("""\
+    ... [thing.master]
+    ... foo: 0
+    ... bar: 0
+    ... """)
+    >>> push_schema = ConfigSchema('schema.cfg', schema_file)
+
+    >>> config_file = StringIO.StringIO("""\
+    ... [thing.one]
+    ... foo: 1
+    ... """)
+    >>> push_config = push_schema.loadFile(config_file, 'config.cfg')
+    >>> print push_config.thing.one.foo
+    1
+    >>> print push_config.thing.one.bar
+    0
+
+    >>> push_config.push('test.cfg', """\
+    ... [thing.one]
+    ... bar: 2
+    ... """)
+    >>> print push_config.thing.one.foo
+    1
+    >>> print push_config.thing.one.bar
+    2
+
 
 pop()
 =====
@@ -839,6 +982,7 @@ property returns None.
     >>> print config.extends
     None
 
+
 ===============================
 Attribute access to config data
 ===============================
@@ -895,6 +1039,7 @@ AttributeError.
     Traceback (most recent call last):
       ...
     AttributeError: No section key named non_key.
+
 
 ====================
 Implicit data typing
@@ -1040,6 +1185,7 @@ removed from the beginning/end.
     >>> implicit_config['section_33'].key2
     'multiline value 1\nmultiline value 2'
 
+
 =======================
 Type conversion helpers
 =======================
@@ -1047,6 +1193,61 @@ Type conversion helpers
 lazr.config provides a few helpers for doing explicit type conversion.  These
 functions have to be imported and called explicitly on the configuration
 variable values.
+
+
+Booleans
+========
+
+There is a helper for turning various strings into the boolean values True and
+False.
+
+    >>> from lazr.config import as_boolean
+
+True values include (case-insensitively): true, yes, 1, on, enabled, and
+enable.
+
+    >>> for value in ('true', 'yes', 'on', 'enable', 'enabled', '1'):
+    ...     print value, '->', as_boolean(value)
+    ...     print value.upper(), '->', as_boolean(value.upper())
+    true -> True
+    TRUE -> True
+    yes -> True
+    YES -> True
+    on -> True
+    ON -> True
+    enable -> True
+    ENABLE -> True
+    enabled -> True
+    ENABLED -> True
+    1 -> True
+    1 -> True
+
+False values include (case-insensitively): false, no, 0, off, disabled, and
+disable.
+
+    >>> for value in ('false', 'no', 'off', 'disable', 'disabled', '0'):
+    ...     print value, '->', as_boolean(value)
+    ...     print value.upper(), '->', as_boolean(value.upper())
+    false -> False
+    FALSE -> False
+    no -> False
+    NO -> False
+    off -> False
+    OFF -> False
+    disable -> False
+    DISABLE -> False
+    disabled -> False
+    DISABLED -> False
+    0 -> False
+    0 -> False
+
+Anything else is a error.
+
+    >>> as_boolean('cheese')
+    Traceback (most recent call last):
+    ...
+    ValueError: Invalid boolean value: cheese
+
 
 Host and port
 =============
@@ -1096,7 +1297,8 @@ not an integer.
     >>> as_host_port(':foo')
     Traceback (most recent call last):
     ...
-    ValueError: invalid literal for int(): foo
+    ValueError: invalid literal for int...foo...
+
 
 User and group
 ==============
@@ -1133,6 +1335,7 @@ By default the current user and group names are returned.
     True
     >>> group == grp.getgrgid(os.getgid()).gr_name
     True
+
 
 Time intervals
 ==============
@@ -1209,3 +1412,38 @@ But doesn't accept 'weird' or duplicate combinations.
     Traceback (most recent call last):
     ...
     ValueError
+
+
+Log levels
+==========
+
+It's convenient to be able to use symbolic log level names when using
+lazr.config to configure the Python logger.
+
+    >>> from lazr.config import as_log_level
+
+Any symbolic log level value is valid to use, case insensitively.
+
+    >>> for value in ('critical', 'error', 'warning', 'info',
+    ...               'debug', 'notset'):
+    ...     print value, '->', as_log_level(value)
+    ...     print value.upper(), '->', as_log_level(value.upper())
+    critical -> 50
+    CRITICAL -> 50
+    error -> 40
+    ERROR -> 40
+    warning -> 30
+    WARNING -> 30
+    info -> 20
+    INFO -> 20
+    debug -> 10
+    DEBUG -> 10
+    notset -> 0
+    NOTSET -> 0
+
+Non-log levels cannot be used here.
+
+    >>> as_log_level('cheese')
+    Traceback (most recent call last):
+    ...
+    AttributeError: 'module' object has no attribute 'CHEESE'
