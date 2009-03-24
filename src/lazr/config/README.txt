@@ -589,9 +589,9 @@ section's name does not contain a category.
 The Section's type is the same type as the ConfigSchema.section_factory.
 
     >>> section_1
-    <lazr.config.Section object at ...>
+    <lazr.config...Section object at ...>
     >>> config.schema.section_factory
-    <class 'lazr.config.Section'>
+    <class 'lazr.config...Section'>
 
 A key can be verified to be in a Section.
 
@@ -1064,9 +1064,9 @@ sections as is made by Schema.
 
     >>> implicit_config = implicit_schema.load(local_conf)
     >>> implicit_config
-    <lazr.config.Config object at ...>
+    <lazr.config...Config object at ...>
     >>> config
-    <lazr.config.Config object at ...>
+    <lazr.config...Config object at ...>
 
     >>> sections = sorted(section.name for section in config)
     >>> implicit_sections = sorted(
@@ -1080,7 +1080,7 @@ sections as is made by Schema.
 But the type of sections in the config support implicit typing.
 
     >>> implicit_config['section_3.app_b']
-    <lazr.config.ImplicitTypeSection object at ...>
+    <lazr.config...ImplicitTypeSection object at ...>
 
 ImplicitTypeSection, in contrast to Section, converts values that
 appear to be integer or boolean into ints and bools.
