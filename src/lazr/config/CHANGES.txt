@@ -2,6 +2,14 @@
 Changes
 =======
 
+1.1.1 (2009-03-24)
+==================
+
+- License clarification: only v3 of the LGPL is offered at this time, not
+  subsequent versions.
+
+- Build is updated to support Sphinx docs and other small changes.
+
 1.1 (2009-01-05)
 ================
 

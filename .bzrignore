@@ -1,8 +1,11 @@
-TEST_THIS_REST_BEFORE_REGISTERING.txt
 bin
 develop-eggs
-eggs
-parts
-src/*.egg-info
 .installed.cfg
+develop-eggs
+parts
+*.egg-info
+tags
+TAGS
+build
+*.egg
 dist
