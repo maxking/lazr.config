@@ -1,5 +1,3 @@
-Create configuration schemas, and process and validate configurations.
-
 ..
     This file is part of lazr.config.
 
@@ -14,3 +12,30 @@ Create configuration schemas, and process and validate configurations.
 
     You should have received a copy of the GNU Lesser General Public License
     along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
+
+This project uses zc.buildout for development.
+
+============
+Introduction
+============
+
+These are guidelines for hacking on the lazr.config project.  But first,
+please see the common hacking guidelines at:
+
+    http://dev.launchpad.net/Hacking
+
+
+Getting help
+------------
+
+If you find bugs in this package, you can report them here:
+
+    https://launchpad.net/lazr.config
+
+If you want to discuss this package, join the team and mailing list here:
+
+    https://launchpad.net/~lazr-developers
+
+or send a message to:
+
+    lazr-developers@lists.launchpad.net

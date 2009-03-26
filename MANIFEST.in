@@ -1,2 +1,2 @@
-include *.txt MANIFEST.in
-recursive-include src *.txt *.py *.conf
+exclude MANIFEST.in buildout.cfg bootstrap.py .bzrignore
+prune _bootstrap

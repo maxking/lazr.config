@@ -3,8 +3,7 @@
 
     lazr.config is free software: you can redistribute it and/or modify it
     under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or (at your
-    option) any later version.
+    the Free Software Foundation, version 3 of the License.
 
     lazr.config is distributed in the hope that it will be useful, but WITHOUT
     ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -41,7 +40,7 @@ the information in the configuration file.
 
     >>> import lazr.config
     >>> testfiles_dir = path.normpath(path.join(
-    ...     path.dirname(lazr.config.__file__), 'testdata'))
+    ...     path.dirname(lazr.config.__file__), 'tests', 'testdata'))
     >>> base_conf = path.join(testfiles_dir, 'base.conf')
 
 The config file contains sections enclosed in square brackets ([]).
@@ -94,7 +93,7 @@ required. Lines that start with a hash (#) are comments.
     >>> schema.name
     'base.conf'
     >>> schema.filename
-    '...lazr/config/testdata/base.conf'
+    '...lazr/config/tests/testdata/base.conf'
 
 If you provide an optional file-like object as a second argument to the
 constructor, that is used instead of opening the named file implicitly.
@@ -462,7 +461,7 @@ the configuration.
     >>> config.name
     'local.conf'
     >>> config.filename
-    '...lazr/config/testdata/local.conf'
+    '...lazr/config/tests/testdata/local.conf'
 
 The config can access the schema via the schema property.
 
@@ -590,9 +589,9 @@ section's name does not contain a category.
 The Section's type is the same type as the ConfigSchema.section_factory.
 
     >>> section_1
-    <lazr.config.Section object at ...>
+    <lazr.config...Section object at ...>
     >>> config.schema.section_factory
-    <class 'lazr.config.Section'>
+    <class 'lazr.config...Section'>
 
 A key can be verified to be in a Section.
 
@@ -1065,9 +1064,9 @@ sections as is made by Schema.
 
     >>> implicit_config = implicit_schema.load(local_conf)
     >>> implicit_config
-    <lazr.config.Config object at ...>
+    <lazr.config...Config object at ...>
     >>> config
-    <lazr.config.Config object at ...>
+    <lazr.config...Config object at ...>
 
     >>> sections = sorted(section.name for section in config)
     >>> implicit_sections = sorted(
@@ -1081,7 +1080,7 @@ sections as is made by Schema.
 But the type of sections in the config support implicit typing.
 
     >>> implicit_config['section_3.app_b']
-    <lazr.config.ImplicitTypeSection object at ...>
+    <lazr.config...ImplicitTypeSection object at ...>
 
 ImplicitTypeSection, in contrast to Section, converts values that
 appear to be integer or boolean into ints and bools.
@@ -1447,3 +1446,13 @@ Non-log levels cannot be used here.
     Traceback (most recent call last):
     ...
     AttributeError: 'module' object has no attribute 'CHEESE'
+
+===============
+Other Documents
+===============
+
+.. toctree::
+   :glob:
+
+   *
+   docs/*
