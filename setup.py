@@ -71,6 +71,5 @@ setup(
         docs=['Sphinx',
               'z3c.recipe.sphinxdoc']
     ),
-    setup_requires=['eggtestinfo', 'setuptools_bzr'],
     test_suite='lazr.config.tests',
     )
