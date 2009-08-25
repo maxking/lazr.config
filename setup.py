@@ -37,8 +37,7 @@ def generate(*docname_or_string):
 # end generic helpers
 
 
-sys.path.insert(0, 'src')
-from lazr.config import __version__
+__version__ = open("src/lazr/config/version.txt").read().strip()
 
 setup(
     name='lazr.config',
