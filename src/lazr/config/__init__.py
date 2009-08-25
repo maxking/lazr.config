@@ -16,7 +16,8 @@
 
 """A configuration file system."""
 
-__version__ = '1.1.1'
+import pkg_resources
+__version__ = pkg_resources.resource_string("lazr.config", "version.txt").strip()
 
 # Re-export in such a way that __version__ can still be imported if
 # dependencies are not yet available.
