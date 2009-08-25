@@ -1,2 +1,4 @@
+include ez_setup.py
+recursive-include src *.txt *.pt *.zcml
 exclude MANIFEST.in buildout.cfg bootstrap.py .bzrignore
 prune _bootstrap
