@@ -1,6 +1,4 @@
-#!/usr/bin/env python
-
-# Copyright 2008-2009 Canonical Ltd.  All rights reserved.
+# Copyright 2008-2013 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config.
 #
@@ -16,10 +14,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
 
-import ez_setup
-ez_setup.use_setuptools()
+import distribute_setup
+distribute_setup.use_setuptools()
 
-import sys
 from setuptools import setup, find_packages
 
 # generic helpers primarily for the long_description
@@ -37,22 +34,21 @@ def generate(*docname_or_string):
 # end generic helpers
 
 
-__version__ = open("src/lazr/config/version.txt").read().strip()
+__version__ = open("lazr/config/version.txt").read().strip()
 
 setup(
     name='lazr.config',
     version=__version__,
     namespace_packages=['lazr'],
-    packages=find_packages('src'),
-    package_dir={'':'src'},
+    packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
     maintainer='LAZR Developers',
     maintainer_email='lazr-developers@lists.launchpad.net',
-    description=open('README.txt').readline().strip(),
+    description=open('README.rst').readline().strip(),
     long_description=generate(
-        'src/lazr/config/README.txt',
-        'src/lazr/config/CHANGES.txt'),
+        'lazr/config/README.rst',
+        'lazr/config/CHANGES.rst'),
     license='LGPL v3',
     install_requires=[
         'setuptools',
@@ -60,16 +56,16 @@ setup(
         'lazr.delegates',
         ],
     url='https://launchpad.net/lazr.config',
-    download_url= 'https://launchpad.net/lazr.config/+download',
+    download_url='https://launchpad.net/lazr.config/+download',
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
         "Operating System :: OS Independent",
-        "Programming Language :: Python"],
-    extras_require=dict(
-        docs=['Sphinx',
-              'z3c.recipe.sphinxdoc']
-    ),
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        ],
     test_suite='lazr.config.tests',
     )

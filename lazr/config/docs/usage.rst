@@ -1,31 +1,16 @@
-..
-    This file is part of lazr.config.
-
-    lazr.config is free software: you can redistribute it and/or modify it
-    under the terms of the GNU Lesser General Public License as published by
-    the Free Software Foundation, version 3 of the License.
-
-    lazr.config is distributed in the hope that it will be useful, but WITHOUT
-    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-    FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
-    License for more details.
-
-    You should have received a copy of the GNU Lesser General Public License
-    along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
-
+===========
 LAZR config
-***********
+===========
 
 The LAZR config system is typically used to manage process configuration.
-Process configuration is for saying how things change when we run
-systems on different machines, or under different circumstances.
+Process configuration is for saying how things change when we run systems on
+different machines, or under different circumstances.
 
-This system uses ini-like file format of section, keys, and values.
-The config file supports inheritance to minimize duplication of
-information across files. The format supports schema validation.
+This system uses ini-like file format of section, keys, and values.  The
+config file supports inheritance to minimize duplication of information across
+files. The format supports schema validation.
 
 
-============
 ConfigSchema
 ============
 
@@ -54,7 +39,7 @@ required. Lines that start with a hash (#) are comments.
     >>> schema_file = open(base_conf, 'r')
     >>> raw_schema = schema_file.read()
     >>> schema_file.close()
-    >>> print raw_schema
+    >>> print(raw_schema)
     # This section defines required keys and default values.
     [section_1]
     key1: foo
@@ -103,9 +88,9 @@ constructor, that is used instead of opening the named file implicitly.
     >>> verifyObject(IConfigSchema, other_schema)
     True
 
-    >>> print other_schema.name
+    >>> print(other_schema.name)
     exist.conf
-    >>> print other_schema.filename
+    >>> print(other_schema.filename)
     /does/not/exist.conf
 
     >>> file_object.close()
@@ -115,7 +100,7 @@ over in a loop as needed.
 
     >>> from operator import attrgetter
     >>> for section_schema in sorted(schema, key=attrgetter('name')):
-    ...     print section_schema.name
+    ...     print(section_schema.name)
     section-2.app-b
     section-5
     section_1
@@ -124,7 +109,7 @@ over in a loop as needed.
     section_33
 
     >>> for section_schema in sorted(other_schema, key=attrgetter('name')):
-    ...     print section_schema.name
+    ...     print(section_schema.name)
     section-2.app-b
     section-5
     section_1
@@ -168,7 +153,7 @@ using getByCategory().
 
     >>> all_section_3 = schema.getByCategory('section_3')
     >>> for section_schema in sorted(all_section_3, key=attrgetter('name')):
-    ...     print section_schema.name
+    ...     print(section_schema.name)
     section_3.app_a
     section_3.app_b
 
@@ -246,7 +231,7 @@ default values if not overriden in the configuration. In the case of
 key5, the key had no explicit value, so the value is an empty string.
 
     >>> for key in sorted(section_schema_1):
-    ...     print key, ':', section_schema_1[key]
+    ...     print(key, ':', section_schema_1[key])
     key1 : foo
     key2 : bar and baz
     key3 : Launchpad&nbsp;rocks
@@ -260,9 +245,9 @@ the new data overlays the template data. This is the case for section
 '[section_3.app_b]'.
 
     >>> for section_schema in sorted(all_section_3, key=attrgetter('name')):
-    ...     print section_schema.name
+    ...     print(section_schema.name)
     ...     for key in sorted(section_schema):
-    ...         print key, ':', section_schema[key]
+    ...         print(key, ':', section_schema[key])
     section_3.app_a
     key1 : 17
     key2 : 3.1415
@@ -409,7 +394,7 @@ key that declares that this conf extends shared.conf.
     >>> local_file = open(local_conf, 'r')
     >>> raw_conf = local_file.read()
     >>> local_file.close()
-    >>> print raw_conf
+    >>> print(raw_conf)
     [meta]
     extends: shared.conf
     # Localize a key for section_1.
@@ -436,7 +421,7 @@ not be named in the schema file.
     ['thing.one', 'thing.two']
     >>> sorted(section.foo for section in sections)
     ['1', '2']
-    >>> print master_conf.thing.one.name
+    >>> print(master_conf.thing.one.name)
     thing.one
 
 The shared.conf file derives the keys and default values from the
@@ -448,7 +433,7 @@ changes.
     >>> shared_file = open(shared_conf, 'r')
     >>> raw_conf = shared_file.read()
     >>> shared_file.close()
-    >>> print raw_conf
+    >>> print(raw_conf)
     # The schema is defined by base.conf.
     # Localize a key for section_1.
     [section_1]
@@ -477,7 +462,7 @@ because it pertains to the config system, not to the processes being
 configured.
 
     >>> for section in sorted(config, key=attrgetter('name')):
-    ...     print section.name
+    ...     print(section.name)
     section-2.app-b
     section-5
     section_1
@@ -541,7 +526,7 @@ All the sections that belong to a category can be retrieved using the
 getByCategory() method.
 
     >>> for section in config.getByCategory('section_3'):
-    ...     print section_schema.name
+    ...     print(section_schema.name)
     section_3.app_b
 
 Passing a non-existent category_name to the method will raise a
@@ -623,7 +608,7 @@ and key4, shared.conf provided the value of key2. local.conf provided
 key5. While shared.conf provided a key5, local.conf takes precedence.
 
     >>> for key in sorted(section_1):
-    ...     print key, ':', section_1[key]
+    ...     print(key, ':', section_1[key])
     key1 : foo
     key2 : sharing is fun
     key3 : Launchpad&nbsp;rocks
@@ -639,7 +624,7 @@ are present. In the case of section_3.app_b, its keys were defined in a
 template section.
 
     >>> for key in sorted(config['section_3.app_b']):
-    ...     print key, ':', config['section_3.app_b'][key]
+    ...     print(key, ':', config['section_3.app_b'][key])
     key1 : 17
     key2 : changed
     key3 : unique
@@ -679,9 +664,9 @@ errors in the config.
     >>> try:
     ...     bad_config.validate()
     ... except ConfigErrors, validation_error:
-    ...     print validation_error
+    ...     print(validation_error)
     ...     for error in validation_error.errors:
-    ...         print  "%s: %s" % (error.__class__.__name__, error)
+    ...         print( "%s: %s" % (error.__class__.__name__, error))
     ConfigErrors: bad conf is not valid.
     UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in ... range(128)
     UnknownKeyError: section_1 does not have a keyn key.
@@ -715,7 +700,7 @@ ConfigData as it was constructed from the schema's config to the last
 config file that was loaded.
 
     >>> for config_data in config.overlays:
-    ...     print config_data.name
+    ...     print(config_data.name)
     local.conf
     shared.conf
     base.conf
@@ -729,12 +714,12 @@ row. The schema can never be the second item in the overlays stack.
 
     >>> single_config = schema.load(schema.filename)
     >>> for config_data in single_config.overlays:
-    ...     print config_data.name
+    ...     print(config_data.name)
     base.conf
 
     >>> single_config.push(schema.filename, raw_schema)
     >>> for config_data in single_config.overlays:
-    ...     print config_data.name
+    ...     print(config_data.name)
     base.conf
 
 
@@ -749,7 +734,7 @@ indented unparsed data is passed to push() in thie example; push()
 does not require tests to dedent the test data.
 
     >>> for key in sorted(config['section_1']):
-    ...     print key, ':', config['section_1'][key]
+    ...     print(key, ':', config['section_1'][key])
     key1 : foo
     key2 : sharing is fun
     key3 : Launchpad&nbsp;rocks
@@ -763,7 +748,7 @@ does not require tests to dedent the test data.
     >>> config.push('test config', test_data)
 
     >>> for key in sorted(config['section_1']):
-    ...     print key, ':', config['section_1'][key]
+    ...     print(key, ':', config['section_1'][key])
     key1 : test1
     key2 : sharing is fun
     key3 : Launchpad&nbsp;rocks
@@ -785,12 +770,12 @@ schema in this example.
     >>> 'section_3.app_a' in config
     True
     >>> for key in sorted(config['section_3.app_a']):
-    ...     print key, ':', config['section_3.app_a'][key]
+    ...     print(key, ':', config['section_3.app_a'][key])
     key1 : 17
     key2 : 3.1415
 
     >>> for key in sorted(config.schema['section_3.app_a']):
-    ...     print key, ':', config.schema['section_3.app_a'][key]
+    ...     print(key, ':', config.schema['section_3.app_a'][key])
     key1 : 17
     key2 : 3.1415
 
@@ -801,7 +786,7 @@ The config's name and overlays are updated by push().
     >>> config.filename
     'test app_a'
     >>> for config_data in config.overlays:
-    ...     print config_data.name
+    ...     print(config_data.name)
     test app_a
     test config
     local.conf
@@ -819,7 +804,7 @@ explicitly extended.
 The config's sections are updated with 'section_3.app_a' too.
 
     >>> for section in sorted(config, key=attrgetter('name')):
-    ...     print section.name
+    ...     print(section.name)
     section-2.app-b
     section-5
     section_1
@@ -837,7 +822,7 @@ values in the config to the schema's default values.
     ...     extends: base.conf""")
     >>> config.push(extender_conf_name, extender_conf_data)
     >>> for config_data in config.overlays:
-    ...     print config_data.name
+    ...     print(config_data.name)
     extender.conf
     base.conf
     test app_a
@@ -849,7 +834,7 @@ values in the config to the schema's default values.
 The 'section_1' section was restored to the schema's default values.
 
     >>> for key in sorted(config['section_1']):
-    ...     print key, ':', config['section_1'][key]
+    ...     print(key, ':', config['section_1'][key])
     key1 : foo
     key2 : bar and baz
     key3 : Launchpad&nbsp;rocks
@@ -861,7 +846,7 @@ push() can also be used to extend master sections.
     >>> sections = sorted(master_conf.getByCategory('bar'),
     ...                   key=attrgetter('name'))
     >>> for section in sections:
-    ...     print section.name, section.baz
+    ...     print(section.name, section.baz)
     bar.master badger
     bar.soup cougar
 
@@ -872,7 +857,7 @@ push() can also be used to extend master sections.
     >>> sections = sorted(master_conf.getByCategory('bar'),
     ...                   key=attrgetter('name'))
     >>> for section in sections:
-    ...     print section.name, section.baz
+    ...     print(section.name, section.baz)
     bar.soup cougar
     bar.two dolphin
 
@@ -883,7 +868,7 @@ push() can also be used to extend master sections.
     >>> sections = sorted(master_conf.getByCategory('bar'),
     ...                   key=attrgetter('name'))
     >>> for section in sections:
-    ...     print section.name, section.baz
+    ...     print(section.name, section.baz)
     bar.soup cougar
     bar.three emu
     bar.two dolphin
@@ -902,18 +887,18 @@ push() works with master sections too.
     ... foo: 1
     ... """)
     >>> push_config = push_schema.loadFile(config_file, 'config.cfg')
-    >>> print push_config.thing.one.foo
+    >>> print(push_config.thing.one.foo)
     1
-    >>> print push_config.thing.one.bar
+    >>> print(push_config.thing.one.bar)
     0
 
     >>> push_config.push('test.cfg', """\
     ... [thing.one]
     ... bar: 2
     ... """)
-    >>> print push_config.thing.one.foo
+    >>> print(push_config.thing.one.foo)
     1
-    >>> print push_config.thing.one.bar
+    >>> print(push_config.thing.one.bar)
     2
 
 
@@ -933,7 +918,7 @@ slice from the specified ConfigData to the top of the stack.
     'test config'
 
     >>> for config_data in config.overlays:
-    ...     print config_data.name
+    ...     print(config_data.name)
     local.conf
     shared.conf
     base.conf
@@ -943,7 +928,7 @@ overlay stack. Section 'section_3.app_a' was removed completely. The
 keys ('key1' and 'key5') for 'section_1' were restored.
 
     >>> for section in sorted(config, key=attrgetter('name')):
-    ...     print section.name
+    ...     print(section.name)
     section-2.app-b
     section-5
     section_1
@@ -951,7 +936,7 @@ keys ('key1' and 'key5') for 'section_1' were restored.
     section_33
 
     >>> for key in sorted(config['section_1']):
-    ...     print key, ':', config['section_1'][key]
+    ...     print(key, ':', config['section_1'][key])
     key1 : foo
     key2 : sharing is fun
     key3 : Launchpad&nbsp;rocks
@@ -978,7 +963,7 @@ If all but the bottom ConfigData is popped from overlays, the extends
 property returns None.
 
     >>> overlays = config.pop('shared.conf')
-    >>> print config.extends
+    >>> print(config.extends)
     None
 
 
@@ -1128,11 +1113,11 @@ bool.
 When the argument is the word 'none', None is returned. The token in the
 config means the key has no value.
 
-    >>> print convert('none')
+    >>> print(convert('none'))
     None
-    >>> print convert('None')
+    >>> print(convert('None'))
     None
-    >>> print convert('nonE')
+    >>> print(convert('nonE'))
     None
 
     >>> convert('none today')
@@ -1206,8 +1191,8 @@ True values include (case-insensitively): true, yes, 1, on, enabled, and
 enable.
 
     >>> for value in ('true', 'yes', 'on', 'enable', 'enabled', '1'):
-    ...     print value, '->', as_boolean(value)
-    ...     print value.upper(), '->', as_boolean(value.upper())
+    ...     print(value, '->', as_boolean(value))
+    ...     print(value.upper(), '->', as_boolean(value.upper()))
     true -> True
     TRUE -> True
     yes -> True
@@ -1225,8 +1210,8 @@ False values include (case-insensitively): false, no, 0, off, disabled, and
 disable.
 
     >>> for value in ('false', 'no', 'off', 'disable', 'disabled', '0'):
-    ...     print value, '->', as_boolean(value)
-    ...     print value.upper(), '->', as_boolean(value.upper())
+    ...     print(value, '->', as_boolean(value))
+    ...     print(value.upper(), '->', as_boolean(value.upper()))
     false -> False
     FALSE -> False
     no -> False
@@ -1425,8 +1410,8 @@ Any symbolic log level value is valid to use, case insensitively.
 
     >>> for value in ('critical', 'error', 'warning', 'info',
     ...               'debug', 'notset'):
-    ...     print value, '->', as_log_level(value)
-    ...     print value.upper(), '->', as_log_level(value.upper())
+    ...     print(value, '->', as_log_level(value))
+    ...     print(value.upper(), '->', as_log_level(value.upper()))
     critical -> 50
     CRITICAL -> 50
     error -> 40

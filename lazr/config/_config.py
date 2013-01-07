@@ -1,4 +1,4 @@
-# Copyright 2008-2009 Canonical Ltd.  All rights reserved.
+# Copyright 2008-2013 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config.
 #
@@ -661,7 +661,7 @@ class Config:
         errors = []
         try:
             config_data.encode('ascii', 'ignore')
-        except UnicodeDecodeError, error:
+        except UnicodeDecodeError as error:
             errors.append(error)
         return errors
 
