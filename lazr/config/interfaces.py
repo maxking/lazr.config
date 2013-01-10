@@ -38,11 +38,7 @@ __all__ = [
     'UnknownKeyError',
     'UnknownSectionError']
 
-#from warnings import filterwarnings
 from zope.interface import Interface, Attribute
-
-# Ignore Python 2.6 deprecation warnings.
-#filterwarnings('ignore', category=DeprecationWarning, module=r'lazr\.config')
 
 
 class ConfigSchemaError(Exception):
