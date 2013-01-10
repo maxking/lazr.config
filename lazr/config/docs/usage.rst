@@ -14,32 +14,27 @@ files. The format supports schema validation.
 ConfigSchema
 ============
 
-A schema is loaded by instantiating the ConfigSchema class with
-the path to a configuration file. The schema is explicitly derived from
-the information in the configuration file.
+A schema is loaded by instantiating the ConfigSchema class with the path to a
+configuration file. The schema is explicitly derived from the information in
+the configuration file.
 
-    >>> from os import path
-    >>> from zope.interface.verify import verifyObject
-    >>> from lazr.config import ConfigSchema
-    >>> from lazr.config.interfaces import IConfigSchema
+    >>> from pkg_resources import resource_string
+    >>> raw_schema = resource_string('lazr.config.tests.testdata', 'base.conf')
 
-    >>> import lazr.config
-    >>> testfiles_dir = path.normpath(path.join(
-    ...     path.dirname(lazr.config.__file__), 'tests', 'testdata'))
-    >>> base_conf = path.join(testfiles_dir, 'base.conf')
+The config file contains sections enclosed in square brackets
+(e.g. ``[section]``).  The section name may be divided into major and minor
+categories using a dot (``.``).  Beneath each section is a list of key-value
+pairs, separated by a colon (``:``).
 
-The config file contains sections enclosed in square brackets ([]).
-The section name may be divided into major and minor categories using a
-dot (.). Beneath each section is a list of key-value pairs, separated
-by a colon (:). Multiple sections with the same major category may have
-their keys defined in another section that appends the '.template'
-suffix to the category name. A section with '.optional' suffix is not
-required. Lines that start with a hash (#) are comments.
+Multiple sections with the same major category may have their keys defined in
+another section that appends the ``.template`` suffix to the category name.
 
-    >>> schema_file = open(base_conf, 'r')
-    >>> raw_schema = schema_file.read()
-    >>> schema_file.close()
-    >>> print(raw_schema)
+A section with ``.optional`` suffix is not required.  Lines that start with a
+hash (``#``) are comments.
+
+    >>> from pkg_resources import resource_string
+    >>> raw_schema = resource_string('lazr.config.tests.testdata', 'base.conf')
+    >>> print(raw_schema.decode('utf-8'))
     # This section defines required keys and default values.
     [section_1]
     key1: foo
@@ -71,29 +66,39 @@ required. Lines that start with a hash (#) are comments.
     key2: multiline value 1
        multiline value 2
 
+To create the schema, provide a file name.
+
+    >>> from lazr.config import ConfigSchema
+    >>> from lazr.config.interfaces import IConfigSchema
+    >>> from pkg_resources import resource_filename
+    >>> from zope.interface.verify import verifyObject
+    >>> base_conf = resource_filename(
+    ...     'lazr.config.tests.testdata', 'base.conf')
     >>> schema = ConfigSchema(base_conf)
     >>> verifyObject(IConfigSchema, schema)
     True
 
-    >>> schema.name
-    'base.conf'
-    >>> schema.filename
-    '...lazr/config/tests/testdata/base.conf'
+The schema has a name and a file name.
+
+    >>> print(schema.name)
+    base.conf
+    >>> print('file:', schema.filename)
+    file: ...lazr/config/tests/testdata/base.conf
 
 If you provide an optional file-like object as a second argument to the
 constructor, that is used instead of opening the named file implicitly.
 
-    >>> file_object = open(base_conf)
-    >>> other_schema = ConfigSchema('/does/not/exist.conf', file_object)
+    >>> with open(base_conf, 'r') as file_object:
+    ...     other_schema = ConfigSchema('/does/not/exist.conf', file_object)
     >>> verifyObject(IConfigSchema, other_schema)
     True
+
+For such schemas, the file name is taken from the first argument.
 
     >>> print(other_schema.name)
     exist.conf
     >>> print(other_schema.filename)
     /does/not/exist.conf
-
-    >>> file_object.close()
 
 A schema is made up of multiple SchemaSections. They can be iterated
 over in a loop as needed.
@@ -125,31 +130,30 @@ used to access the SchemaSection as a subscript.
     >>> 'section-4' in schema
     False
 
-A SectionSchema can be retrieved from the schema using the []
-operator
+A SectionSchema can be retrieved from the schema using the ``[]`` operator.
 
     >>> section_schema_1 = schema['section_1']
-    >>> section_schema_1.name
-    'section_1'
+    >>> print(section_schema_1.name)
+    section_1
 
-A SectionNotFound error is raised if the name does not match any of the
-SectionSchemas.
+A ``SectionNotFound`` error is raised if the name does not match any of the
+sections.
 
     >>> section_schema_app_a = schema['section_3.app_a']
     >>> schema['section-4']
     Traceback (most recent call last):
       ...
-    NoSectionError: ...
+    configparser.NoSectionError: ...
 
-Processes often require resources like databases or vhosts that have a
-common category of keys. The list of all category names can be retrieved
-via the categories attribute.
+Processes often require resources like databases or virtual hosts that have a
+common category of keys.  The list of all category names can be retrieved via
+the categories attribute.
 
     >>> schema.category_names
-    ['section_3', 'section-2']
+    ['section-2', 'section_3']
 
 The list of SchemaSections that share common category can be retrieved
-using getByCategory().
+using ``getByCategory()``.
 
     >>> all_section_3 = schema.getByCategory('section_3')
     >>> for section_schema in sorted(all_section_3, key=attrgetter('name')):
@@ -157,46 +161,41 @@ using getByCategory().
     section_3.app_a
     section_3.app_b
 
-An error is raised when accessing a category does not exist.
-
-    >>> schema.getByCategory('non-section')
-    Traceback (most recent call last):
-      ...
-    NoCategoryError: ...
-
-You can pass a default argument to getByCategory() to avoid the exception.
+You can pass a default argument to ``getByCategory()`` to avoid the exception.
 
     >>> missing = object()
     >>> schema.getByCategory('non-section', missing) is missing
     True
 
 
-=============
 SchemaSection
 =============
 
-A SchemaSection behaves similar to a dictionary. It has keys and
-values. Each SchemaSection has a name.
+A SchemaSection behaves similar to a dictionary.  It has keys and values.
 
     >>> from lazr.config.interfaces import ISectionSchema
     >>> section_schema_1 = schema['section_1']
     >>> verifyObject(ISectionSchema, section_schema_1)
     True
 
+Each SchemaSection has a name.
+
     >>> section_schema_1.name
     'section_1'
 
-A SchemaSection can return a 2-tuple of its category name and specific
-name parts. The category name will be None if the SchemaSection's name
-does not contain a category.
+A SchemaSection can return a 2-tuple of its category name and specific name
+parts.
 
     >>> schema['section_3.app_b'].category_and_section_names
     ('section_3', 'app_b')
 
+The category name will be ``None`` if the SchemaSection's name does not
+contain a category.
+
     >>> section_schema_1.category_and_section_names
     (None, 'section_1')
 
-Optional sections have the optional attribute set to True:
+Optional sections have the optional attribute set to ``True``:
 
     >>> section_schema_1.optional
     False
@@ -210,11 +209,11 @@ A key can be verified to be in a section.
     >>> 'nonkey' in section_schema_1
     False
 
-A key can be accessed directly using as a subscript of the SchemaSection.
-The value is always a string.
+A key can be accessed directly using as a subscript of the SchemaSection.  The
+value is always a string.
 
-    >>> section_schema_1['key3']
-    'Launchpad&nbsp;rocks'
+    >>> print(section_schema_1['key3'])
+    Launchpad&nbsp;rocks
     >>> section_schema_1['key5']
     ''
 
@@ -225,10 +224,10 @@ An error is raised if a non-existent key is accessed.
       ...
     KeyError: ...
 
-In the conf file, '[section_1]' is a default section that defines keys
-and values. The values specified in the section schema will be used as
-default values if not overriden in the configuration. In the case of
-key5, the key had no explicit value, so the value is an empty string.
+In the conf file, ``[section_1]`` is a default section that defines keys and
+values.  The values specified in the section schema will be used as default
+values if not overridden in the configuration.  In the case of *key5*, the key
+had no explicit value, so the value is an empty string.
 
     >>> for key in sorted(section_schema_1):
     ...     print(key, ':', section_schema_1[key])
@@ -238,11 +237,11 @@ key5, the key had no explicit value, so the value is an empty string.
     key4 : F&#028c;k yeah!
     key5 :
 
-In the conf file '[section_3.template]' defines a common set of keys and
-default values for '[section_3.app_a]' and '[section_3.app_b]'. When a
-section defines different keys and default values s from the template,
-the new data overlays the template data. This is the case for section
-'[section_3.app_b]'.
+In the conf file ``[section_3.template]`` defines a common set of keys and
+default values for ``[section_3.app_a]`` and ``[section_3.app_b]``.  When a
+section defines different keys and default values from the template, the new
+data overlays the template data.  This is the case for section
+``[section_3.app_b]``.
 
     >>> for section_schema in sorted(all_section_3, key=attrgetter('name')):
     ...     print(section_schema.name)
@@ -257,93 +256,45 @@ the new data overlays the template data. This is the case for section
     key3 : unique
 
 
-=======================
 ConfigSchema validation
 =======================
 
-ConfigSchema will raise an error if the schema file cannot be opened.
+The schema parser is self-validating.  It checks that the character encoding
+is ASCII, and that the data is not ambiguous or self-contradicting.  Keys must
+exist inside sections and section names may not be defined twice.  Sections
+may belong to only one category, and only letters, numbers, dots and dashes
+may be present in section names.
 
-    >>> ConfigSchema("no-such-file")
-    Traceback (most recent call last):
-      ...
-    IOError: [Errno 2] No such file or directory: ...
-
-The schema parser is self-validating. It will check that the character
-encoding is ascii. It will check that the data is not ambiguous or
-self-contradicting.
-
-Schema files that contain non-ASCII characters raise a
-UnicodeDecodeError.
-
-    >>> ConfigSchema(path.join(testfiles_dir, 'bad-nonascii.conf'))
-    Traceback (most recent call last):
-      ...
-    UnicodeDecodeError: ...
-
-Keys without sections raise MissingSectionHeaderError.
-
-    >>> ConfigSchema(path.join(testfiles_dir, 'bad-sectionless.conf'))
-    Traceback (most recent call last):
-      ...
-    MissingSectionHeaderError: File contains no section headers. ...
-
-Redefining a section in a config file will raise a RedefinedSectionError.
-
-    >>> ConfigSchema(path.join(testfiles_dir, 'bad-redefined-section.conf'))
-    Traceback (most recent call last):
-      ...
-    RedefinedSectionError: ...
-
-# XXX sinzui 2007-12-13:
-# ConfigSchema should raise RedefinedKeyError when a section redefines
-# a key.
-
-Defining a section that belongs to many categories will raise
-a InvalidSectionNameError.
-
-    >>> ConfigSchema(path.join(testfiles_dir, 'bad-invalid-name.conf'))
-    Traceback (most recent call last):
-      ...
-    InvalidSectionNameError: [category.other_category.name.optional] ...
-
-As does using non word characters other than a dot or dash in the
-section name.
-
-    >>> ConfigSchema(path.join(testfiles_dir, 'bad-invalid-name-chars.conf'))
-    Traceback (most recent call last):
-      ...
-    InvalidSectionNameError: [$category.name_part.optional] ...
+.. For multilingual Python support reasons, we don't include testable examples
+   here.  See ``test_config.py`` and ``lazr/config/interfaces.py`` for details.
 
 
-=============
 IConfigLoader
 =============
 
-ConfigSchema implements the two methods in the IConfigLoader interface.
-A Config is created by a schema using either the load() or loadFile()
+ConfigSchema implements the two methods in the IConfigLoader interface.  A
+Config is created by a schema using either the ``load()`` or ``loadFile()``
 methods to return a Config instance.
 
     >>> from lazr.config.interfaces import IConfigLoader
     >>> verifyObject(IConfigLoader, schema)
     True
 
-The load() method accepts a filename.
+The ``load()`` method accepts a filename.
 
-    >>> local_conf = path.join(testfiles_dir,  'local.conf')
+    >>> local_conf = resource_filename(
+    ...     'lazr.config.tests.testdata', 'local.conf')
     >>> config = schema.load(local_conf)
 
-Passing a filename to a non-existent file will raise an IOError.
+The ``loadFile()`` method accepts a file-like object and an optional filename
+keyword argument.  The filename argument must be passed if the file-like
+object does not have a ``name`` attribute.
 
-    >>> schema.load("fnord.conf")
-    Traceback (most recent call last):
-      ...
-    IOError: [Errno 2] No such file or directory: 'fnord.conf'
-
-The loadFile method accepts a file-like object and an optional filename
-keyword arg. The filename arg must be passed if the file-like object
-does not have a name attribute.
-
-    >>> import StringIO
+    >>> try:
+    ...     from io import StringIO
+    ... except ImportError:
+    ...     # Python 2
+    ...     from StringIO import StringIO
     >>> bad_data = ("""
     ...     [meta]
     ...     metakey: unsupported
@@ -354,30 +305,24 @@ does not have a name attribute.
     ...     key1: bad character in caf\xc3)
     ...     [section_3.template]
     ...     key1: schema suffixes are not permitted""")
-    >>> schema.loadFile(StringIO.StringIO(bad_data))
-    Traceback (most recent call last):
-      ...
-    AttributeError: StringIO instance has no attribute 'name'
-
     >>> bad_config = schema.loadFile(
-    ...     StringIO.StringIO(bad_data), 'bad conf')
+    ...     StringIO(bad_data), 'bad conf')
 
-The bad_config example will be used for validation tests.
+.. The bad_config example will be used for validation tests.
 
 
-======
 Config
 ======
 
-The config represents the local configuration of the process on a
-system. It is validated with a schema. It extends the schema, or other
-conf files to define the specific differences from the extended files
-that are required to run the local processes.
+The config represents the local configuration of the process on a system.  It
+is validated with a schema.  It extends the schema, or other conf files, to
+define the specific differences from the extended files that are required to
+run the local processes.
 
-The object returned by load() provides both the IConfigData and
-IStackableConfig interfaces. IConfigData is for read-only access to the
-configuration data. A process configuration is made up of a stack of
-different IConfigData. The IStackableConfig interface provides the
+The object returned by ``load()`` provides both the ``IConfigData`` and
+``IStackableConfig`` interfaces.  ``IConfigData`` is for read-only access to
+the configuration data.  A process configuration is made up of a stack of
+different ``IConfigData``.  The ``IStackableConfig`` interface provides the
 methods used to manipulate that stack of configuration overlays.
 
     >>> from lazr.config.interfaces import IConfigData, IStackableConfig
@@ -386,14 +331,13 @@ methods used to manipulate that stack of configuration overlays.
     >>> verifyObject(IStackableConfig, config)
     True
 
-Like the schema file, the conf file is made up of sections with keys.
-The sections may belong to a category. Unlike the schema file, it does
-not have template or optional sections. The [meta] has the extends
-key that declares that this conf extends shared.conf.
+Like the schema file, the conf file is made up of sections with keys.  The
+sections may belong to a category.  Unlike the schema file, it does not have
+template or optional sections.  The ``[meta]`` section has the extends key
+that declares that this conf extends ``shared.conf``.
 
-    >>> local_file = open(local_conf, 'r')
-    >>> raw_conf = local_file.read()
-    >>> local_file.close()
+    >>> with open(local_conf, 'rt') as local_file:
+    ...     raw_conf = local_file.read()
     >>> print(raw_conf)
     [meta]
     extends: shared.conf
@@ -403,14 +347,16 @@ key that declares that this conf extends shared.conf.
     # Accept the default values for the optional section-5.
     [section-5]
 
-The .master section allows admins to define configurations for an arbitrary
-number of processes.  If the schema defines .master sections, then the conf
-file can contain sections that extend the .master section.  These are like
-categories with templates except that the section names extending .master need
-not be named in the schema file.
+The ``.master`` section allows admins to define configurations for an
+arbitrary number of processes.  If the schema defines ``.master`` sections,
+then the conf file can contain sections that extend the ``.master`` section.
+These are like categories with templates except that the section names
+extending ``.master`` need not be named in the schema file.
 
-    >>> master_schema_conf = path.join(testfiles_dir,  'master.conf')
-    >>> master_local_conf = path.join(testfiles_dir,  'master-local.conf')
+    >>> master_schema_conf = resource_filename(
+    ...     'lazr.config.tests.testdata', 'master.conf')
+    >>> master_local_conf = resource_filename(
+    ...     'lazr.config.tests.testdata', 'master-local.conf')
     >>> master_schema = ConfigSchema(master_schema_conf)
     >>> sections = master_schema.getByCategory('thing')
     >>> sorted(section.name for section in sections)
@@ -424,15 +370,14 @@ not be named in the schema file.
     >>> print(master_conf.thing.one.name)
     thing.one
 
-The shared.conf file derives the keys and default values from the
-schema. This config was loaded before local.conf because its sections
-and values are required to be in place before local.conf applies its
-changes.
+The ``shared.conf`` file derives the keys and default values from the schema.
+This config was loaded before ``local.conf`` because its sections and values
+are required to be in place before ``local.conf`` applies its changes.
 
-    >>> shared_conf = path.join(testfiles_dir,  'shared.conf')
-    >>> shared_file = open(shared_conf, 'r')
-    >>> raw_conf = shared_file.read()
-    >>> shared_file.close()
+    >>> shared_config = resource_filename(
+    ...     'lazr.config.tests.testdata', 'shared.conf')
+    >>> with open(shared_config, 'rt') as shared_file:
+    ...     raw_conf = shared_file.read()
     >>> print(raw_conf)
     # The schema is defined by base.conf.
     # Localize a key for section_1.
@@ -440,26 +385,25 @@ changes.
     key2: sharing is fun
     key5: shared value
 
-The config that was loaded has name and filename attributes to identify
-the configuration.
+The config that was loaded has ``name`` and ``filename`` attributes to
+identify the configuration.
 
-    >>> config.name
-    'local.conf'
-    >>> config.filename
-    '...lazr/config/tests/testdata/local.conf'
+    >>> print(config.name)
+    local.conf
+    >>> print('file:', config.filename)
+    file: ...lazr/config/tests/testdata/local.conf
 
 The config can access the schema via the schema property.
 
-    >>> config.schema.name
-    'base.conf'
+    >>> print(config.schema.name)
+    base.conf
     >>> config.schema is schema
     True
 
-A config is made up of multiple Sections like the schema. They can be
-iterated over in a loop as needed. This config inherited several
-sections defined in schema. Note that the meta section is not present
-because it pertains to the config system, not to the processes being
-configured.
+A config is made up of multiple Sections like the schema.  They can be
+iterated over in a loop as needed.  This config inherited several sections
+defined in schema.  Note that the meta section is not present because it
+pertains to the config system, not to the processes being configured.
 
     >>> for section in sorted(config, key=attrgetter('name')):
     ...     print(section.name)
@@ -476,11 +420,11 @@ You can check if a section name is in a config.
     >>> 'bad-section' in config
     False
 
-Optional SchemaSections are not inherited by the config. A config file
-must declare all optional sections. Including the section heading is
-enough to inherit the section and its keys. The config file may localize
-the keys by declaring them too. The local.conf file includes
-'section-5', but not 'section_3.app_a'
+Optional SchemaSections are not inherited by the config.  A config file must
+declare all optional sections.  Including the section heading is enough to
+inherit the section and its keys.  The config file may localize the keys by
+declaring them too.  The ``local.conf`` file includes ``section-5``, but not
+``section_3.app_a``.
 
 
     >>> 'section_3.app_a' in config
@@ -489,7 +433,6 @@ the keys by declaring them too. The local.conf file includes
     True
     >>> config.schema['section_3.app_a'].optional
     True
-
     >>> 'section-5' in config
     True
     >>> 'section-5' in config.schema
@@ -497,73 +440,52 @@ the keys by declaring them too. The local.conf file includes
     >>> config.schema['section-5'].optional
     True
 
-A Section can be accessed using subscript notation. Accessing a section
-that does not exist will raise a NoSectionError.
+A Section can be accessed using subscript notation.  Accessing a section that
+does not exist will raise a NoSectionError.  NoSectionError is raised for a
+undeclared optional sections too.
 
     >>> section_1 = config['section_1']
     >>> section_1.name in config
     True
 
-    >>> config['section-4']
-    Traceback (most recent call last):
-      ...
-    NoSectionError: ...
-
-NoSectionError is raised for a undeclared optional sections too.
-
-    >>> config['section_3.app_a']
-    Traceback (most recent call last):
-      ...
-    NoSectionError: ...
-
-Config supports category access like Schema does. The list of
-categories are returned by the category_names property.
+Config supports category access like Schema does.  The list of categories are
+returned by the ``category_names`` property.
 
     >>> sorted(config.category_names)
     ['section-2', 'section_3']
 
 All the sections that belong to a category can be retrieved using the
-getByCategory() method.
+``getByCategory()`` method.
 
     >>> for section in config.getByCategory('section_3'):
     ...     print(section_schema.name)
     section_3.app_b
 
 Passing a non-existent category_name to the method will raise a
-NoCategoryError.
-
-    >>> config.getByCategory('non-section')
-    Traceback (most recent call last):
-      ...
-    NoCategoryError: ...
-
-As with schemas, you can pass a default argument to getByCategory() to avoid
-the exception.
+NoCategoryError.  As with schemas, you can pass a default argument to
+``getByCategory()`` to avoid the exception.
 
     >>> missing = object()
     >>> config.getByCategory('non-section', missing) is missing
     True
 
 
-=======
 Section
 =======
 
-A Section behaves similar to a dictionary. It has keys and values.
-It supports some specialize access methods and properties for working
-with the values. Each Section has a name. Continuing with section_1
-from above....
+A Section behaves similar to a dictionary.  It has keys and values.  It
+supports some specialize access methods and properties for working with the
+values.  Each Section has a name.
 
     >>> from lazr.config.interfaces import ISection
     >>> verifyObject(ISection, section_1)
     True
+    >>> print(section_1.name)
+    section_1
 
-    >>> section_1.name
-    'section_1'
-
-Like SectionSchemas, sections can return a 2-tuple of their category
-name and specific name parts. The category name will be None if the
-section's name does not contain a category.
+Like SectionSchemas, sections can return a 2-tuple of their category name and
+specific name parts.  The category name will be ``None`` if the section's name
+does not contain a category.
 
     >>> config['section_3.app_b'].category_and_section_names
     ('section_3', 'app_b')
@@ -571,7 +493,7 @@ section's name does not contain a category.
     >>> section_1.category_and_section_names
     (None, 'section_1')
 
-The Section's type is the same type as the ConfigSchema.section_factory.
+The Section's type is the same type as the ``ConfigSchema.section_factory``.
 
     >>> section_1
     <lazr.config...Section object at ...>
@@ -588,10 +510,10 @@ A key can be verified to be in a Section.
 A key can be accessed directly using as a subscript of the Section.
 The value is always a string.
 
-    >>> section_1['key3']
-    'Launchpad&nbsp;rocks'
-    >>> section_1['key5']
-    'local value'
+    >>> print(section_1['key3'])
+    Launchpad&nbsp;rocks
+    >>> print(section_1['key5'])
+    local value
 
 An error is raised if a non-existent key is accessed via a subscript.
 
@@ -600,12 +522,13 @@ An error is raised if a non-existent key is accessed via a subscript.
       ...
     KeyError: ...
 
-The Section keys can be iterated. The section has all the keys from the
-SectionSchema. The values came form the schema's default values, then
-the values from shared.conf were applied, and lastly, the values from
-local.conf were applied. The schema provided the values of key1, key3,
-and key4, shared.conf provided the value of key2. local.conf provided
-key5. While shared.conf provided a key5, local.conf takes precedence.
+The Section keys can be iterated over.  The section has all the keys from the
+SectionSchema.  The values came form the schema's default values, then the
+values from ``shared.conf`` were applied, and lastly, the values from
+``local.conf`` were applied.  The schema provided the values of ``key1``,
+``key3``, and ``key4``. ``shared.conf`` provided the value of ``key2``
+. ``local.conf`` provided ``key5``.  While ``shared.conf`` provided a
+``key5``, ``local.conf`` takes precedence.
 
     >>> for key in sorted(section_1):
     ...     print(key, ':', section_1[key])
@@ -614,14 +537,12 @@ key5. While shared.conf provided a key5, local.conf takes precedence.
     key3 : Launchpad&nbsp;rocks
     key4 : F&#028c;k yeah!
     key5 : local value
-
     >>> section_1.schema['key5']
     ''
 
-The schema provided mandatory sections and default values to the
-config. So while the config file did not declare all the sections, they
-are present. In the case of section_3.app_b, its keys were defined in a
-template section.
+The schema provided mandatory sections and default values to the config.  So
+while the config file did not declare all the sections, they are present.  In
+the case of ``section_3.app_b``, its keys were defined in a template section.
 
     >>> for key in sorted(config['section_3.app_b']):
     ...     print(key, ':', config['section_3.app_b'][key])
@@ -629,8 +550,8 @@ template section.
     key2 : changed
     key3 : unique
 
-Sections attributes cannot be directly set to shadow config options. An
-AttributeError is raised when a callsite attempts to mutate the config.
+Sections attributes cannot be directly set to shadow config options.  An
+``AttributeError`` is raised when an attempt is made to mutate the config.
 
     >>> config['section_3.app_b'].key1 = 'fail'
     Traceback (most recent call last):
@@ -645,79 +566,55 @@ Nor can new attributes be added to a section.
     AttributeError: Config options cannot be set directly.
 
 
-==================
 Validating configs
 ==================
 
-Config provides the validate() method to verify that the config is valid
-according to the schema. The method returns True if the config is valid.
+Config provides the ``validate()`` method to verify that the config is valid
+according to the schema.  The method returns ``True`` if the config is valid.
 
     >>> config.validate()
     True
 
-When the config is not valid, a ConfigErrors is raised. The
-exception has an errors property that contains a list of all the
-errors in the config.
-
-    >>> from lazr.config.interfaces import ConfigErrors
-
-    >>> try:
-    ...     bad_config.validate()
-    ... except ConfigErrors, validation_error:
-    ...     print(validation_error)
-    ...     for error in validation_error.errors:
-    ...         print( "%s: %s" % (error.__class__.__name__, error))
-    ConfigErrors: bad conf is not valid.
-    UnicodeDecodeError: 'ascii' codec can't decode byte 0xc3 in ... range(128)
-    UnknownKeyError: section_1 does not have a keyn key.
-    UnknownKeyError: The meta section does not have a metakey key.
-    UnknownSectionError: base.conf does not have a unknown-section section.
+When the config is not valid, a ConfigErrors is raised.  The exception has an
+``errors`` property that contains a list of all the errors in the config.
 
 
-===============
 Config overlays
 ===============
 
-A conf file may contains a meta section that is used by the config
-system. The config data can access the config it extended using the
-extends property. The object is just the config data; it does not
-have any config methods.
+A conf file may contain a meta section that is used by the config system.  The
+config data can access the config it extended using the ``extends`` property.
+The object is just the config data; it does not have any config methods.
 
-    >>> config.extends.name
-    'shared.conf'
+    >>> print(config.extends.name)
+    shared.conf
 
     >>> verifyObject(IConfigData, config.extends)
     True
-    >>> verifyObject(IStackableConfig, config.extends)
-    Traceback (most recent call last):
-     ...
-    DoesNotImplement: ...
 
-As Config supports inheritance through the extends key, each conf file
-produces instance of ConfigData, called an overlay. ConfigData
-represents the state of a config. The overlays property is a stack of
-ConfigData as it was constructed from the schema's config to the last
-config file that was loaded.
+As Config supports inheritance through the ``extends`` key, each conf file
+produces instance of ConfigData, called an *overlay*.  ConfigData represents
+the state of a config.  The ``overlays`` property is a stack of ConfigData as
+it was constructed from the schema's config to the last config file that was
+loaded.
 
     >>> for config_data in config.overlays:
     ...     print(config_data.name)
     local.conf
     shared.conf
     base.conf
-
     >>> verifyObject(IConfigData, config.overlays[-1])
     True
 
-Conf files can use the extends key to specify that it extends a schema
-without incurring a processing penalty by loading the schema twice in a
-row. The schema can never be the second item in the overlays stack.
+Conf files can use the ``extends`` key to specify that it extends a schema
+without incurring a processing penalty by loading the schema twice in a row.
+The schema can never be the second item in the overlays stack.
 
     >>> single_config = schema.load(schema.filename)
     >>> for config_data in single_config.overlays:
     ...     print(config_data.name)
     base.conf
-
-    >>> single_config.push(schema.filename, raw_schema)
+    >>> single_config.push(schema.filename, raw_schema.decode('utf-8'))
     >>> for config_data in single_config.overlays:
     ...     print(config_data.name)
     base.conf
@@ -726,12 +623,13 @@ row. The schema can never be the second item in the overlays stack.
 push()
 ======
 
-Raw config data can be merged with the config to create a new overlay
-for testing. The push() method accepts a string of config data. The
-data must conform to the schema. The 'section_1' sections's keys are
-updated when the unparsed data is pushed onto the config. Note that
-indented unparsed data is passed to push() in thie example; push()
-does not require tests to dedent the test data.
+Raw config data can be merged with the config to create a new overlay for
+testing.  The ``push()`` method accepts a string of config data.  The data
+must conform to the schema.  The ``section_1`` sections's keys are updated
+when the unparsed data is pushed onto the config.  Note that indented,
+unparsed data is passed to ``push()`` in this example; ``push()`` does not
+require tests to dedent the test data.
+::
 
     >>> for key in sorted(config['section_1']):
     ...     print(key, ':', config['section_1'][key])
@@ -755,9 +653,10 @@ does not require tests to dedent the test data.
     key4 : F&#028c;k yeah!
     key5 :
 
-Besides updating section keys, optional sections can be enabled too.
-The 'section_3.app_a' section is enabled with the default keys from the
-schema in this example.
+Besides updating section keys, optional sections can be enabled too.  The
+``section_3.app_a`` section is enabled with the default keys from the schema
+in this example.
+::
 
     >>> config.schema['section_3.app_a'].optional
     True
@@ -779,12 +678,12 @@ schema in this example.
     key1 : 17
     key2 : 3.1415
 
-The config's name and overlays are updated by push().
+The config's name and overlays are updated by ``push()``.
 
-    >>> config.name
-    'test app_a'
-    >>> config.filename
-    'test app_a'
+    >>> print(config.name)
+    test app_a
+    >>> print(config.filename)
+    test app_a
     >>> for config_data in config.overlays:
     ...     print(config_data.name)
     test app_a
@@ -793,15 +692,15 @@ The config's name and overlays are updated by push().
     shared.conf
     base.conf
 
-The 'test app_a' did not declare an extends key in a meta section. Its
-extends property is None, even though it implicitly extends 'test
-config'. The extends property only provides access to configs that are
-explicitly extended.
+The ``test app_a`` config did not declare an ``extends`` key in a ``meta``
+section.  Its ``extends`` property is ``None``, even though it implicitly
+extends ``test config``.  The ``extends`` property only provides access to
+configs that are explicitly extended.
 
-    >>> config.extends.name
-    'test config'
+    >>> print(config.extends.name)
+    test config
 
-The config's sections are updated with 'section_3.app_a' too.
+The config's sections are updated with ``section_3.app_a`` too.
 
     >>> for section in sorted(config, key=attrgetter('name')):
     ...     print(section.name)
@@ -812,11 +711,12 @@ The config's sections are updated with 'section_3.app_a' too.
     section_3.app_b
     section_33
 
-A config file may state that it extends its schema (to clearly connect
-the config to the schema). The schema can also be pushed to reset the
-values in the config to the schema's default values.
+A config file may state that it extends its schema (to clearly connect the
+config to the schema).  The schema can also be pushed to reset the values in
+the config to the schema's default values.
 
-    >>> extender_conf_name = path.join(testfiles_dir, 'extender.conf')
+    >>> extender_conf_name = resource_filename(
+    ...     'lazr.config.tests.testdata', 'extender.conf')
     >>> extender_conf_data = ("""
     ...     [meta]
     ...     extends: base.conf""")
@@ -831,7 +731,7 @@ values in the config to the schema's default values.
     shared.conf
     base.conf
 
-The 'section_1' section was restored to the schema's default values.
+The ``section_1`` section was restored to the schema's default values.
 
     >>> for key in sorted(config['section_1']):
     ...     print(key, ':', config['section_1'][key])
@@ -841,7 +741,8 @@ The 'section_1' section was restored to the schema's default values.
     key4 : F&#028c;k yeah!
     key5 :
 
-push() can also be used to extend master sections.
+``push()`` can also be used to extend master sections.
+::
 
     >>> sections = sorted(master_conf.getByCategory('bar'),
     ...                   key=attrgetter('name'))
@@ -873,16 +774,17 @@ push() can also be used to extend master sections.
     bar.three emu
     bar.two dolphin
 
-push() works with master sections too.
+``push()`` works with master sections too.
+::
 
-    >>> schema_file = StringIO.StringIO("""\
+    >>> schema_file = StringIO("""\
     ... [thing.master]
     ... foo: 0
     ... bar: 0
     ... """)
     >>> push_schema = ConfigSchema('schema.cfg', schema_file)
 
-    >>> config_file = StringIO.StringIO("""\
+    >>> config_file = StringIO("""\
     ... [thing.one]
     ... foo: 1
     ... """)
@@ -905,17 +807,18 @@ push() works with master sections too.
 pop()
 =====
 
-ConfigData can be removed from the stack of overlays using the pop()
-method. The methods returns the list of ConfigData that was removed--a
+ConfigData can be removed from the stack of overlays using the ``pop()``
+method.  The methods returns the list of ConfigData that was removed -- a
 slice from the specified ConfigData to the top of the stack.
+::
 
     >>> overlays = config.pop('test config')
     >>> for config_data in overlays:
-    ...     config_data.name
-    'extender.conf'
-    'base.conf'
-    'test app_a'
-    'test config'
+    ...     print(config_data.name)
+    extender.conf
+    base.conf
+    test app_a
+    test config
 
     >>> for config_data in config.overlays:
     ...     print(config_data.name)
@@ -923,9 +826,10 @@ slice from the specified ConfigData to the top of the stack.
     shared.conf
     base.conf
 
-The config's state was restored to the ConfigData that is top of the
-overlay stack. Section 'section_3.app_a' was removed completely. The
-keys ('key1' and 'key5') for 'section_1' were restored.
+The config's state was restored to the ConfigData that is on top of the
+overlay stack.  Section ``section_3.app_a`` was removed completely.  The keys
+(``key1`` and ``key5``) for ``section_1`` were restored.
+::
 
     >>> for section in sorted(config, key=attrgetter('name')):
     ...     print(section.name)
@@ -943,21 +847,9 @@ keys ('key1' and 'key5') for 'section_1' were restored.
     key4 : F&#028c;k yeah!
     key5 : local value
 
-Call the pop() method with an unknown conf_name raises an error
-
-    >>> overlays = config.pop('bad-name')
-    Traceback (most recent call last):
-      ...
-    NoConfigError: No config with name: bad-name.
-
-A Config must have at least one ConfigData in the overlays stack so that
-it has data. The bottom ConfigData in the overlays was made from the
-schema's required sections. It cannot be removed by the pop() method.
-
-    >>> overlays = config.pop('base.conf')
-    Traceback (most recent call last):
-      ...
-    NoConfigError: Cannot pop the schema's default config.
+A Config must have at least one ConfigData in the overlays stack so that it
+has data.  The bottom ConfigData in the overlays was made from the schema's
+required sections.  It cannot be removed by the ``pop()`` method.
 
 If all but the bottom ConfigData is popped from overlays, the extends
 property returns None.
@@ -967,15 +859,13 @@ property returns None.
     None
 
 
-===============================
 Attribute access to config data
 ===============================
 
-Config provides attribute-based access to its members. So long as the
-section, category, and key names conform to Python identifier naming
-rules, they can be accessed as attributes. The Python code will not
-compile, or will cause a runtime error if the object being accessed has
-a bad name.
+Config provides attribute-based access to its members.  So long as the
+section, category, and key names conform to Python identifier naming rules,
+they can be accessed as attributes.  The Python code will not compile, or will
+cause a runtime error if the object being accessed has a bad name.
 
 Sections appear to be attributes of the config.
 
@@ -983,15 +873,15 @@ Sections appear to be attributes of the config.
     >>> config.section_1 is config['section_1']
     True
 
-Accessing an unknown section, or a section whose name is not a valid
-Python identifier will raise an AttributeError.
+Accessing an unknown section, or a section whose name is not a valid Python
+identifier will raise an AttributeError.
 
     >>> config.section-5
     Traceback (most recent call last):
       ...
     AttributeError: No section or category named section.
 
-Categories may be accessed as attributes too. The ICategory interface
+Categories may be accessed as attributes too.  The ICategory interface
 provides access to its sections as members.
 
     >>> from lazr.config.interfaces import ICategory
@@ -1001,8 +891,8 @@ provides access to its sections as members.
     >>> config_category.app_b is config['section_3.app_b']
     True
 
-Like a config, a category will raise an AttributeError if it does not
-have a section that matches the identifier name.
+Like a config, a category will raise an AttributeError if it does not have a
+section that matches the identifier name.
 
     >>> config_category.no_such_section
     Traceback (most recent call last):
@@ -1011,10 +901,10 @@ have a section that matches the identifier name.
 
 Section keys can be accessed directly as members.
 
-    >>> config.section_1.key2
-    'sharing is fun'
-    >>> config.section_3.app_b.key2
-    'changed'
+    >>> print(config.section_1.key2)
+    sharing is fun
+    >>> print(config.section_3.app_b.key2)
+    changed
 
 Accessing a non-existent section key as an attribute will raise an
 AttributeError.
@@ -1025,27 +915,25 @@ AttributeError.
     AttributeError: No section key named non_key.
 
 
-====================
 Implicit data typing
 ====================
 
-The ImplicitTypeSchema can create configs that support implicit
-datatypes. The value of a Section key is automatically converted from
-str to the type the value appears to be. Implicit typing does not add
-any validation support; it adds type casting conveniences for the
-developer.
+The ImplicitTypeSchema can create configs that support implicit datatypes.
+The value of a Section key is automatically converted from ``str`` to the type
+the value appears to be.  Implicit typing does not add any validation support;
+it adds type casting conveniences for the developer.
 
-An ImplicitTypeSchema can be used to parse the same schema and conf
-files that Schema uses.
+An ImplicitTypeSchema can be used to parse the same schema and conf files that
+Schema uses.
 
     >>> from lazr.config import ImplicitTypeSchema
-
     >>> implicit_schema = ImplicitTypeSchema(base_conf)
     >>> verifyObject(IConfigSchema, implicit_schema)
     True
 
 The config loaded by ImplicitTypeSchema is the same class with the same
 sections as is made by Schema.
+::
 
     >>> implicit_config = implicit_schema.load(local_conf)
     >>> implicit_config
@@ -1067,8 +955,9 @@ But the type of sections in the config support implicit typing.
     >>> implicit_config['section_3.app_b']
     <lazr.config...ImplicitTypeSection object at ...>
 
-ImplicitTypeSection, in contrast to Section, converts values that
-appear to be integer or boolean into ints and bools.
+ImplicitTypeSection, in contrast to Section, converts values that appear to be
+integer or boolean into ints and bools.
+::
 
     >>> config['section_3.app_b']['key1']
     '17'
@@ -1088,11 +977,11 @@ The value is also converted when it is accessed as an attribute.
     >>> implicit_config['section-2.app-b'].key1
     True
 
-ImplicitTypeSection uses a private method that employs heuristic rules
-to convert strings into simple types. It may return a str, bool, or int.
-When the argument is the word 'true' or 'false' (in any case), a bool is
-returned. Values like 'yes', 'no', '0', and '1' are not converted to
-bool.
+ImplicitTypeSection uses a private method that employs heuristic rules to
+convert strings into simple types.  It may return a str, bool, or int.  When
+the argument is the word 'true' or 'false' (in any case), a bool is returned.
+Values like 'yes', 'no', '0', and '1' are not converted to bool.
+::
 
     >>> convert = implicit_config['section_1']._convert
 
@@ -1110,8 +999,9 @@ bool.
     >>> convert('True or False')
     'True or False'
 
-When the argument is the word 'none', None is returned. The token in the
-config means the key has no value.
+When the argument is the word ``none``, ``None`` is returned.  The token in
+the config means the key has no value.
+::
 
     >>> print(convert('none'))
     None
@@ -1120,14 +1010,15 @@ config means the key has no value.
     >>> print(convert('nonE'))
     None
 
-    >>> convert('none today')
-    'none today'
-    >>> convert('nonevident')
-    'nonevident'
+    >>> print(convert('none today'))
+    none today
+    >>> print(convert('nonevident'))
+    nonevident
 
-When the argument is an unbroken sequence of numbers, an int is
-returned. The number may have a leading positive or negative. Octal and
-hex notation is not supported.
+When the argument is an unbroken sequence of numbers, an int is returned.  The
+number may have a leading positive or negative.  Octal and hex notation is not
+supported.
+::
 
     >>> convert('0')
     0
@@ -1154,7 +1045,8 @@ hex notation is not supported.
     '0x100'
 
 Multiline values are always strings, with white space (and line breaks)
-removed from the beginning/end.
+removed from the beginning and end.
+::
 
     >>> convert("""multiline value 1
     ...     multiline value 2""")
@@ -1170,7 +1062,6 @@ removed from the beginning/end.
     'multiline value 1\nmultiline value 2'
 
 
-=======================
 Type conversion helpers
 =======================
 
@@ -1180,10 +1071,10 @@ variable values.
 
 
 Booleans
-========
+--------
 
-There is a helper for turning various strings into the boolean values True and
-False.
+There is a helper for turning various strings into the boolean values ``True``
+and ``False``.
 
     >>> from lazr.config import as_boolean
 
@@ -1234,10 +1125,10 @@ Anything else is a error.
 
 
 Host and port
-=============
+-------------
 
-There is a helper for converting from a host:port string to a 2-tuple of
-(host, port).
+There is a helper for converting from a ``host:port`` string to a 2-tuple of
+``(host, port)``.
 
     >>> from lazr.config import as_host_port
     >>> as_host_port('host:25')
@@ -1285,10 +1176,10 @@ not an integer.
 
 
 User and group
-==============
+--------------
 
-A helper is provided for turning a chown(1)-style user:group specification
-into a 2-tuple of the user name and group name.
+A helper is provided for turning a ``chown(1)``-style ``user:group``
+specification into a 2-tuple of the user name and group name.
 
     >>> from lazr.config import as_username_groupname
 
@@ -1322,10 +1213,10 @@ By default the current user and group names are returned.
 
 
 Time intervals
-==============
+--------------
 
-One such converter accepts a range of 'time interval specifications', and
-returns a Python timedelta.
+This converter accepts a range of *time interval specifications*, and returns
+a Python timedelta_.
 
     >>> from lazr.config import as_timedelta
 
@@ -1334,22 +1225,22 @@ The function converts from an integer to the equivalent number of seconds.
     >>> as_timedelta('45s')
     datetime.timedelta(0, 45)
 
-The function also accepts suffixes 'm' for minutes...
+The function also accepts suffixes ``m`` for minutes...
 
     >>> as_timedelta('3m')
     datetime.timedelta(0, 180)
 
-...'h' for hours...
+...``h`` for hours...
 
     >>> as_timedelta('2h')
     datetime.timedelta(0, 7200)
 
-...and 'd' for days...
+...and ``d`` for days...
 
     >>> as_timedelta('4d')
     datetime.timedelta(4)
 
-...and 'w' for weeks.
+...and ``w`` for weeks.
 
     >>> as_timedelta('4w')
     datetime.timedelta(28)
@@ -1366,7 +1257,7 @@ It also accepts any combination thereof.
     >>> as_timedelta('4w2d9h3s')
     datetime.timedelta(30, 32403)
 
-But doesn't accept 'weird' or duplicate combinations.
+But doesn't accept "weird" or duplicate combinations.
 
     >>> as_timedelta('3s2s')
     Traceback (most recent call last):
@@ -1399,10 +1290,10 @@ But doesn't accept 'weird' or duplicate combinations.
 
 
 Log levels
-==========
+----------
 
 It's convenient to be able to use symbolic log level names when using
-lazr.config to configure the Python logger.
+``lazr.config`` to configure the Python logger.
 
     >>> from lazr.config import as_log_level
 
@@ -1432,7 +1323,7 @@ Non-log levels cannot be used here.
     ...
     AttributeError: 'module' object has no attribute 'CHEESE'
 
-===============
+
 Other Documents
 ===============
 
@@ -1441,3 +1332,5 @@ Other Documents
 
    *
    docs/*
+
+.. _timedelta: http://docs.python.org/3/library/datetime.html#timedelta-objects
