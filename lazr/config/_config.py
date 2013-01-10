@@ -1,4 +1,4 @@
-# Copyright 2008-2009 Canonical Ltd.  All rights reserved.
+# Copyright 2008-2013 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config.
 #
@@ -16,8 +16,9 @@
 
 """Implementation classes for config."""
 
-__metaclass__ = type
+from __future__ import absolute_import, print_function, unicode_literals
 
+__metaclass__ = type
 __all__ = [
     'Config',
     'ConfigData',
@@ -34,7 +35,6 @@ __all__ = [
     ]
 
 
-import StringIO
 import datetime
 import grp
 import logging
@@ -42,35 +42,39 @@ import os
 import pwd
 import re
 
-from ConfigParser import NoSectionError, RawConfigParser
 from os.path import abspath, basename, dirname
 from textwrap import dedent
 
-from zope.interface import implements
+try:
+    from io import StringIO
+    from configparser import NoSectionError, RawConfigParser
+except ImportError:
+    # Python 2.
+    from StringIO import StringIO
+    from ConfigParser import NoSectionError, RawConfigParser
+
+
+from zope.interface import implementer
 
 from lazr.config.interfaces import (
     ConfigErrors, ICategory, IConfigData, IConfigLoader, IConfigSchema,
     InvalidSectionNameError, ISection, ISectionSchema, IStackableConfig,
     NoCategoryError, NoConfigError, RedefinedSectionError, UnknownKeyError,
     UnknownSectionError)
-from lazr.delegates import delegates
+from lazr.delegates import delegate_to
 
 _missing = object()
 
 
 def read_content(filename):
     """Return the content of a file at filename as a string."""
-    source_file = open(filename, 'r')
-    try:
-        raw_data = source_file.read()
-    finally:
-        source_file.close()
-    return raw_data
+    with open(filename, 'rt') as fp:
+        return fp.read()
 
 
+@implementer(ISectionSchema)
 class SectionSchema:
     """See `ISectionSchema`."""
-    implements(ISectionSchema)
 
     def __init__(self, name, options, is_optional=False, is_master=False):
         """Create an `ISectionSchema` from the name and options.
@@ -89,7 +93,8 @@ class SectionSchema:
 
     def __iter__(self):
         """See `ISectionSchema`"""
-        return self._options.iterkeys()
+        for key in self._options.keys():
+            yield key
 
     def __contains__(self, name):
         """See `ISectionSchema`"""
@@ -113,11 +118,10 @@ class SectionSchema:
                               self.optional, self.master)
 
 
+@delegate_to(ISectionSchema, context='schema')
+@implementer(ISection)
 class Section:
     """See `ISection`."""
-
-    implements(ISection)
-    delegates(ISectionSchema, context='schema')
 
     def __init__(self, schema, _options=None):
         """Create an `ISection` from schema.
@@ -223,9 +227,9 @@ class ImplicitTypeSection(Section):
         return self._convert(value)
 
 
+@implementer(IConfigSchema, IConfigLoader)
 class ConfigSchema:
     """See `IConfigSchema`."""
-    implements(IConfigSchema, IConfigLoader)
 
     _section_factory = Section
 
@@ -267,7 +271,7 @@ class ConfigSchema:
         """
         raw_schema = read_content(filename)
         # Verify that the string is ascii.
-        raw_schema.encode('ascii', 'ignore')
+        raw_schema.encode('ascii', 'strict')
         # Verify that no sections are redefined.
         section_names = []
         for section_name in re.findall(r'^\s*\[[^\]]+\]', raw_schema, re.M):
@@ -275,7 +279,7 @@ class ConfigSchema:
                 raise RedefinedSectionError(section_name)
             else:
                 section_names.append(section_name)
-        return StringIO.StringIO(raw_schema)
+        return StringIO(raw_schema)
 
     def _setSectionSchemasAndCategoryNames(self, parser):
         """Set the SectionSchemas and category_names from the config."""
@@ -301,7 +305,7 @@ class ConfigSchema:
                 section_name, options, is_optional, is_master)
             if category_name is not None:
                 category_names.add(category_name)
-        self._category_names = list(category_names)
+        self._category_names = sorted(category_names)
 
     _section_name_pattern = re.compile(r'\w[\w.-]+\w')
 
@@ -355,7 +359,8 @@ class ConfigSchema:
 
     def __iter__(self):
         """See `IConfigSchema`."""
-        return self._section_schemas.itervalues()
+        for value in self._section_schemas.values():
+            yield value
 
     def __contains__(self, name):
         """See `IConfigSchema`."""
@@ -423,9 +428,9 @@ class ImplicitTypeSchema(ConfigSchema):
     _section_factory = ImplicitTypeSection
 
 
+@implementer(IConfigData)
 class ConfigData:
     """See `IConfigData`."""
-    implements(IConfigData)
 
     def __init__(self, filename, sections, extends=None, errors=None):
         """Set the configuration data."""
@@ -456,7 +461,8 @@ class ConfigData:
 
     def __iter__(self):
         """See `IConfigData`."""
-        return self._sections.itervalues()
+        for value in self._sections.values():
+            yield value
 
     def __contains__(self, name):
         """See `IConfigData`."""
@@ -484,12 +490,12 @@ class ConfigData:
         return sections
 
 
+@delegate_to(IConfigData, context='data')
+@implementer(IStackableConfig)
 class Config:
     """See `IStackableConfig`."""
     # LAZR config classes may access ConfigData private data.
     # pylint: disable-msg=W0212
-    implements(IStackableConfig)
-    delegates(IConfigData, context='data')
 
     def __init__(self, schema):
         """Set the schema and configuration."""
@@ -567,7 +573,7 @@ class Config:
             confs = []
         encoding_errors = self._verifyEncoding(conf_data)
         parser = RawConfigParser()
-        parser.readfp(StringIO.StringIO(conf_data), conf_filename)
+        parser.readfp(StringIO(conf_data), conf_filename)
         confs.append((conf_filename, parser, encoding_errors))
         if parser.has_option('meta', 'extends'):
             base_path = dirname(conf_filename)
@@ -660,8 +666,11 @@ class Config:
         """
         errors = []
         try:
-            config_data.encode('ascii', 'ignore')
-        except UnicodeDecodeError, error:
+            if isinstance(config_data, bytes):
+                config_data.decode('ascii', 'strict')
+            else:
+                config_data.encode('ascii', 'strict')
+        except UnicodeError as error:
             errors.append(error)
         return errors
 
@@ -706,9 +715,9 @@ class Config:
         raise NoConfigError('No config with name: %s.' % conf_name)
 
 
+@implementer(ICategory)
 class Category:
     """See `ICategory`."""
-    implements(ICategory)
 
     def __init__(self, name, sections):
         """Initialize the Category its name and a list of sections."""
@@ -786,12 +795,8 @@ def as_username_groupname(value=None):
     return user, group
 
 
-def _sort_order(a, b):
-    """Sort timedelta suffixes from greatest to least."""
-    if len(a) == 0:
-        return -1
-    if len(b) == 0:
-        return 1
+def _sortkey(item):
+    """Return a value that sorted(..., key=_sortkey) can use."""
     order = dict(
         w=0,    # weeks
         d=1,    # days
@@ -799,20 +804,14 @@ def _sort_order(a, b):
         m=3,    # minutes
         s=4,    # seconds
         )
-    suffix_a = order.get(a[-1])
-    suffix_b = order.get(b[-1])
-    if suffix_a is None or suffix_b is None:
-        raise ValueError
-    return cmp(suffix_a, suffix_b)
-
+    return order.get(item[-1])
 
 def as_timedelta(value):
     """Convert a value string to the equivalent timedeta."""
     # Technically, the regex will match multiple decimal points in the
     # left-hand side, but that's okay because the float/int conversion below
     # will properly complain if there's more than one dot.
-    components = sorted(re.findall(r'([\d.]+[smhdw])', value),
-                        cmp=_sort_order)
+    components = sorted(re.findall(r'([\d.]+[smhdw])', value), key=_sortkey)
     # Complain if the components are out of order.
     if ''.join(components) != value:
         raise ValueError
