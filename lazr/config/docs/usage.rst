@@ -136,21 +136,14 @@ A SectionSchema can be retrieved from the schema using the ``[]`` operator.
     >>> print(section_schema_1.name)
     section_1
 
-A ``SectionNotFound`` error is raised if the name does not match any of the
-sections.
-
-    >>> section_schema_app_a = schema['section_3.app_a']
-    >>> schema['section-4']
-    Traceback (most recent call last):
-      ...
-    configparser.NoSectionError: ...
-
 Processes often require resources like databases or virtual hosts that have a
 common category of keys.  The list of all category names can be retrieved via
 the categories attribute.
 
-    >>> schema.category_names
-    ['section-2', 'section_3']
+    >>> for name in schema.category_names:
+    ...     print(name)
+    section-2
+    section_3
 
 The list of SchemaSections that share common category can be retrieved
 using ``getByCategory()``.
@@ -180,20 +173,24 @@ A SchemaSection behaves similar to a dictionary.  It has keys and values.
 
 Each SchemaSection has a name.
 
-    >>> section_schema_1.name
-    'section_1'
+    >>> print(section_schema_1.name)
+    section_1
 
 A SchemaSection can return a 2-tuple of its category name and specific name
 parts.
 
-    >>> schema['section_3.app_b'].category_and_section_names
-    ('section_3', 'app_b')
+    >>> for name in schema['section_3.app_b'].category_and_section_names:
+    ...     print(name)
+    section_3
+    app_b
 
 The category name will be ``None`` if the SchemaSection's name does not
 contain a category.
 
-    >>> section_schema_1.category_and_section_names
-    (None, 'section_1')
+    >>> for name in section_schema_1.category_and_section_names:
+    ...     print(name)
+    None
+    section_1
 
 Optional sections have the optional attribute set to ``True``:
 
@@ -359,14 +356,19 @@ extending ``.master`` need not be named in the schema file.
     ...     'lazr.config.tests.testdata', 'master-local.conf')
     >>> master_schema = ConfigSchema(master_schema_conf)
     >>> sections = master_schema.getByCategory('thing')
-    >>> sorted(section.name for section in sections)
-    ['thing.master']
+    >>> for name in sorted(section.name for section in sections):
+    ...     print(name)
+    thing.master
     >>> master_conf = master_schema.load(master_local_conf)
     >>> sections = master_conf.getByCategory('thing')
-    >>> sorted(section.name for section in sections)
-    ['thing.one', 'thing.two']
-    >>> sorted(section.foo for section in sections)
-    ['1', '2']
+    >>> for name in sorted(section.name for section in sections):
+    ...     print(name)
+    thing.one
+    thing.two
+    >>> for name in sorted(section.foo for section in sections):
+    ...     print(name)
+    1
+    2
     >>> print(master_conf.thing.one.name)
     thing.one
 
@@ -451,8 +453,10 @@ undeclared optional sections too.
 Config supports category access like Schema does.  The list of categories are
 returned by the ``category_names`` property.
 
-    >>> sorted(config.category_names)
-    ['section-2', 'section_3']
+    >>> for name in sorted(config.category_names):
+    ...     print(name)
+    section-2
+    section_3
 
 All the sections that belong to a category can be retrieved using the
 ``getByCategory()`` method.
@@ -487,11 +491,14 @@ Like SectionSchemas, sections can return a 2-tuple of their category name and
 specific name parts.  The category name will be ``None`` if the section's name
 does not contain a category.
 
-    >>> config['section_3.app_b'].category_and_section_names
-    ('section_3', 'app_b')
-
-    >>> section_1.category_and_section_names
-    (None, 'section_1')
+    >>> for name in config['section_3.app_b'].category_and_section_names:
+    ...     print(name)
+    section_3
+    app_b
+    >>> for name in section_1.category_and_section_names:
+    ...     print(name)
+    None
+    section_1
 
 The Section's type is the same type as the ``ConfigSchema.section_factory``.
 
@@ -992,12 +999,12 @@ Values like 'yes', 'no', '0', and '1' are not converted to bool.
     >>> convert('tRue')
     True
 
-    >>> convert('yes')
-    'yes'
+    >>> print(convert('yes'))
+    yes
     >>> convert('1')
     1
-    >>> convert('True or False')
-    'True or False'
+    >>> print(convert('True or False'))
+    True or False
 
 When the argument is the word ``none``, ``None`` is returned.  The token in
 the config means the key has no value.
@@ -1031,35 +1038,26 @@ supported.
     >>> convert('0100')
     100
 
-    >>> convert('2001-01-01')
-    '2001-01-01'
-    >>> convert('1000*60*5')
-    '1000*60*5'
-    >>> convert('1000 * 60 * 5')
-    '1000 * 60 * 5'
-    >>> convert('1,024')
-    '1,024'
-    >>> convert('0.5')
-    '0.5'
-    >>> convert('0x100')
-    '0x100'
+    >>> print(convert('2001-01-01'))
+    2001-01-01
+    >>> print(convert('1000*60*5'))
+    1000*60*5
+    >>> print(convert('1000 * 60 * 5'))
+    1000 * 60 * 5
+    >>> print(convert('1,024'))
+    1,024
+    >>> print(convert('0.5'))
+    0.5
+    >>> print(convert('0x100'))
+    0x100
 
 Multiline values are always strings, with white space (and line breaks)
 removed from the beginning and end.
-::
 
-    >>> convert("""multiline value 1
-    ...     multiline value 2""")
-    'multiline value 1\n    multiline value 2'
-
-    >>> convert("""
-    ...     multiline value 1
-    ...     multiline value 2
-    ...     """)
-    'multiline value 1\n    multiline value 2'
-
-    >>> implicit_config['section_33'].key2
-    'multiline value 1\nmultiline value 2'
+    >>> print(convert("""multiline value 1
+    ...     multiline value 2"""))
+    multiline value 1
+    multiline value 2
 
 
 Type conversion helpers
@@ -1131,40 +1129,47 @@ There is a helper for converting from a ``host:port`` string to a 2-tuple of
 ``(host, port)``.
 
     >>> from lazr.config import as_host_port
-    >>> as_host_port('host:25')
-    ('host', 25)
+    >>> host, port = as_host_port('host:25')
+    >>> print(host, port)
+    host 25
 
 The port string is optional, in which case, port 25 is the default (for
 historical reasons).
 
-    >>> as_host_port('host')
-    ('host', 25)
+    >>> host, port = as_host_port('host')
+    >>> print(host, port)
+    host 25
 
 The default port can be overridden.
 
-    >>> as_host_port('host', default_port=22)
-    ('host', 22)
+    >>> host, port = as_host_port('host', default_port=22)
+    >>> print(host, port)
+    host 22
 
 The default port is ignored if it is given in the value.
 
-    >>> as_host_port('host:80', default_port=22)
-    ('host', 80)
+    >>> host, port = as_host_port('host:80', default_port=22)
+    >>> print(host, port)
+    host 80
 
 The host name is also optional, as denoted by a leading colon.  When omitted,
 localhost is used.
 
-    >>> as_host_port(':80')
-    ('localhost', 80)
+    >>> host, port = as_host_port(':80')
+    >>> print(host, port)
+    localhost 80
 
 The default host name can be overridden though.
 
-    >>> as_host_port(':80', default_host='myhost')
-    ('myhost', 80)
+    >>> host, port = as_host_port(':80', default_host='myhost')
+    >>> print(host, port)
+    myhost 80
 
 The default host name is ignored if the value string contains it.
 
-    >>> as_host_port('yourhost:80', default_host='myhost')
-    ('yourhost', 80)
+    >>> host, port = as_host_port('yourhost:80', default_host='myhost')
+    >>> print(host, port)
+    yourhost 80
 
 A ValueError occurs if the port number in the configuration value string is
 not an integer.
@@ -1193,14 +1198,16 @@ colon, otherwise an exception is raised.
 
 When both are given, the strings are returned unchanged or validated.
 
-    >>> as_username_groupname('person:group')
-    ('person', 'group')
+    >>> user, group = as_username_groupname('person:group')
+    >>> print(user, group)
+    person group
 
 Numeric values can be given, but they are not converted into their symbolic
 names.
 
-    >>> as_username_groupname('25:26')
-    ('25', '26')
+    >>> uid, gid = as_username_groupname('25:26')
+    >>> print(uid, gid)
+    25 26
 
 By default the current user and group names are returned.
 

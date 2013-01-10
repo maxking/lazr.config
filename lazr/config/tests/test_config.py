@@ -41,7 +41,7 @@ from operator import attrgetter
 from zope.interface.exceptions import DoesNotImplement
 from zope.interface.verify import verifyObject
 
-from lazr.config import ConfigSchema
+from lazr.config import ConfigSchema, ImplicitTypeSchema
 from lazr.config.interfaces import (
     ConfigErrors, IStackableConfig, InvalidSectionNameError, NoCategoryError,
     NoConfigError, RedefinedSectionError, UnknownKeyError,
@@ -49,6 +49,10 @@ from lazr.config.interfaces import (
 
 
 class TestConfig(unittest.TestCase):
+    def setUp(self):
+        # Python 2.6 does not have assertMultilineEqual
+        self.meq = getattr(self, 'assertMultiLineEqual', self.assertEqual)
+
     def _testfile(self, conf_file):
         return pkg_resources.resource_filename(
             'lazr.config.tests.testdata', conf_file)
@@ -63,6 +67,10 @@ class TestConfig(unittest.TestCase):
     def test_must_be_ascii(self):
         self.assertRaises(UnicodeError,
                           ConfigSchema, self._testfile('bad-nonascii.conf'))
+
+    def test_missing_schema_section(self):
+        schema = ConfigSchema(self._testfile('base.conf'))
+        self.assertRaises(NoSectionError, schema.__getitem__, 'section-4')
 
     def test_missing_header_section(self):
         self.assertRaises(MissingSectionHeaderError,
@@ -140,6 +148,8 @@ key1: schema suffixes are not permitted
         except ConfigErrors as errors:
             sorted_errors = sorted(
                 errors.errors, key=attrgetter('__class__.__name__'))
+            self.assertEqual(str(errors),
+                             'ConfigErrors: bad config is not valid.')
         else:
             self.fail('ConfigErrors expected')
         self.assertEqual(len(sorted_errors), 4)
@@ -165,3 +175,31 @@ key1: schema suffixes are not permitted
         config = schema.load(self._testfile('local.conf'))
         config.pop('local.conf')
         self.assertRaises(NoConfigError, config.pop, 'base.conf')
+
+    def test_multiline_preserves_indentation(self):
+        schema = ImplicitTypeSchema(self._testfile('base.conf'))
+        config = schema.load(self._testfile('local.conf'))
+        convert = config['section_1']._convert
+        orig = """\
+multiline value 1
+    multiline value 2"""
+        new = convert(orig)
+        self.meq(new, orig)
+
+    def test_multiline_strips_leading_and_trailing_whitespace(self):
+        schema = ImplicitTypeSchema(self._testfile('base.conf'))
+        config = schema.load(self._testfile('local.conf'))
+        convert = config['section_1']._convert
+        orig = """
+    multiline value 1
+    multiline value 2
+    """
+        new = convert(orig)
+        self.meq(new, orig.strip())
+
+    def test_multiline_key(self):
+        schema = ImplicitTypeSchema(self._testfile('base.conf'))
+        config = schema.load(self._testfile('local.conf'))
+        self.meq(config['section_33'].key2, """\
+multiline value 1
+multiline value 2""")

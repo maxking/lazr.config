@@ -1,4 +1,4 @@
-# Copyright 2007-2009 Canonical Ltd.  All rights reserved.
+# Copyright 2007-2013 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config
 #
@@ -17,8 +17,9 @@
 # pylint: disable-msg=E0211,E0213,W0231
 """Interfaces for process configuration.."""
 
-__metaclass__ = type
+from __future__ import absolute_import, print_function, unicode_literals
 
+__metaclass__ = type
 __all__ = [
     'ConfigErrors',
     'ConfigSchemaError',
@@ -37,11 +38,11 @@ __all__ = [
     'UnknownKeyError',
     'UnknownSectionError']
 
-from warnings import filterwarnings
+#from warnings import filterwarnings
 from zope.interface import Interface, Attribute
 
 # Ignore Python 2.6 deprecation warnings.
-filterwarnings('ignore', category=DeprecationWarning, module=r'lazr\.config')
+#filterwarnings('ignore', category=DeprecationWarning, module=r'lazr\.config')
 
 
 class ConfigSchemaError(Exception):
