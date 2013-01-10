@@ -1,11 +1,13 @@
-=======
-Changes
-=======
+====================
+NEWS for lazr.config
+====================
 
 
-2.0 (2013-01-06)
+2.0 (2013-01-10)
 ================
 - Ported to Python 3.
+- Now more strict in its requirement of ASCII in config files.
+- Category names are now sorted by default.
 
 
 1.1.3 (2009-08-25)

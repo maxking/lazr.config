@@ -13,11 +13,9 @@
     You should have received a copy of the GNU Lesser General Public License
     along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
 
-This project uses zc.buildout for development.
-
-============
-Introduction
-============
+======================
+Hacking on lazr.config
+======================
 
 These are guidelines for hacking on the lazr.config project.  But first,
 please see the common hacking guidelines at:
@@ -39,3 +37,19 @@ If you want to discuss this package, join the team and mailing list here:
 or send a message to:
 
     lazr-developers@lists.launchpad.net
+
+
+Running the tests
+=================
+
+The tests suite requires nose_ and is compatible with both Python 2 and
+Python 3.  To run the full test suite::
+
+    $ python setup.py nosetests
+
+Where ``python`` is the Python executable to use for the tests.  E.g. this
+might be ``python3`` for Python 3, or the Python executable from a
+virtualenv_.
+
+.. _nose: https://nose.readthedocs.org/en/latest/
+.. _virtualenv: http://www.virtualenv.org/en/latest/

@@ -19,21 +19,6 @@ distribute_setup.use_setuptools()
 
 from setuptools import setup, find_packages
 
-# generic helpers primarily for the long_description
-def generate(*docname_or_string):
-    res = []
-    for value in docname_or_string:
-        if value.endswith('.txt'):
-            f = open(value)
-            value = f.read()
-            f.close()
-        res.append(value)
-        if not value.endswith('\n'):
-            res.append('')
-    return '\n'.join(res)
-# end generic helpers
-
-
 __version__ = open("lazr/config/version.txt").read().strip()
 
 setup(
@@ -45,10 +30,17 @@ setup(
     zip_safe=False,
     maintainer='LAZR Developers',
     maintainer_email='lazr-developers@lists.launchpad.net',
-    description=open('README.rst').readline().strip(),
-    long_description=generate(
-        'lazr/config/README.rst',
-        'lazr/config/CHANGES.rst'),
+    description=('Create configuration schemas, and process and '
+                 'validate configurations.'),
+    long_description="""
+The LAZR config system is typically used to manage process configuration.
+Process configuration is for saying how things change when we run systems on
+different machines, or under different circumstances.
+
+This system uses ini-like file format of section, keys, and values.  The
+config file supports inheritance to minimize duplication of information across
+files. The format supports schema validation.
+""",
     license='LGPL v3',
     install_requires=[
         'setuptools',
@@ -67,5 +59,5 @@ setup(
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         ],
-    test_suite='lazr.config.tests',
+    test_suite='nose.collector',
     )
