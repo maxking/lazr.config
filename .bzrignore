@@ -9,3 +9,5 @@ TAGS
 build
 *.egg
 dist
+.tox
+__pycache__
