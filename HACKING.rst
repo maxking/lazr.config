@@ -42,14 +42,10 @@ or send a message to:
 Running the tests
 =================
 
-The tests suite requires nose_ and is compatible with both Python 2 and
-Python 3.  To run the full test suite::
+The tests suite requires tox_ and nose_ and is compatible with both Python 2
+and Python 3.  To run the full test suite::
 
-    $ python setup.py nosetests
-
-Where ``python`` is the Python executable to use for the tests.  E.g. this
-might be ``python3`` for Python 3, or the Python executable from a
-virtualenv_.
+    $ tox
 
 .. _nose: https://nose.readthedocs.org/en/latest/
-.. _virtualenv: http://www.virtualenv.org/en/latest/
+.. _tox: https://testrun.org/tox/latest/

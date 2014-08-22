@@ -3,6 +3,12 @@ NEWS for lazr.config
 ====================
 
 
+2.0.1 (2014-08-22)
+==================
+- Drop the use of `distribute` in favor of `setuptools`.  (LP: #1359926)
+- Run the test suite with `tox`.
+
+
 2.0 (2013-01-10)
 ================
 - Ported to Python 3.

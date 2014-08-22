@@ -14,9 +14,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
 
-import distribute_setup
-distribute_setup.use_setuptools()
-
 from setuptools import setup, find_packages
 
 __version__ = open("lazr/config/version.txt").read().strip()
@@ -43,6 +40,7 @@ files. The format supports schema validation.
 """,
     license='LGPL v3',
     install_requires=[
+        'nose',
         'setuptools',
         'zope.interface',
         'lazr.delegates',
@@ -59,5 +57,8 @@ files. The format supports schema validation.
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         ],
-    test_suite='nose.collector',
+    # nose plugins don't really work with `python setup.py test` so use
+    # `python setup.py nosetests` instead, or just `tox`.  Gosh, we really
+    # should switch to nose2. :/  - BAW 2014-08-20
+    #test_suite='nose.collector',
     )
