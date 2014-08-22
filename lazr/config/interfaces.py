@@ -1,4 +1,4 @@
-# Copyright 2007-2013 Canonical Ltd.  All rights reserved.
+# Copyright 2007-2014 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config
 #
