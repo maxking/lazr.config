@@ -1,4 +1,4 @@
-# Copyright 2008-2014 Canonical Ltd.  All rights reserved.
+# Copyright 2008-2015 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config.
 #
@@ -57,8 +57,4 @@ files. The format supports schema validation.
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         ],
-    # nose plugins don't really work with `python setup.py test` so use
-    # `python setup.py nosetests` instead, or just `tox`.  Gosh, we really
-    # should switch to nose2. :/  - BAW 2014-08-20
-    #test_suite='nose.collector',
     )

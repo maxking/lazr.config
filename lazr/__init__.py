@@ -1,4 +1,4 @@
-# Copyright 2008-2014 Canonical Ltd.  All rights reserved.
+# Copyright 2008-2015 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.config.
 #
@@ -14,14 +14,10 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with lazr.config.  If not, see <http://www.gnu.org/licenses/>.
 
-# This is a namespace package, however under >= Python 3.3, let it be a true
-# namespace package (i.e. this cruft isn't necessary).
-import sys
-
-if sys.hexversion < 0x30300f0:
-    try:
-        import pkg_resources
-        pkg_resources.declare_namespace(__name__)
-    except ImportError:
-        import pkgutil
-        __path__ = pkgutil.extend_path(__path__, __name__)
+# This is a namespace package.
+try:
+    import pkg_resources
+    pkg_resources.declare_namespace(__name__)
+except ImportError:
+    import pkgutil
+    __path__ = pkgutil.extend_path(__path__, __name__)

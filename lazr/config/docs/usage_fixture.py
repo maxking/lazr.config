@@ -1,4 +1,4 @@
-# Copyright 2009-2014 Canonical Ltd.  All rights reserved.
+# Copyright 2009-2015 Canonical Ltd.  All rights reserved.
 #
 # This file is part of lazr.smtptest
 #
