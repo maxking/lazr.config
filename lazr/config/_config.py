@@ -41,6 +41,7 @@ import logging
 import os
 import pwd
 import re
+import sys
 
 from os.path import abspath, basename, dirname
 from textwrap import dedent
@@ -572,7 +573,14 @@ class Config:
         if confs is None:
             confs = []
         encoding_errors = self._verifyEncoding(conf_data)
-        parser = RawConfigParser()
+        # LP: #1397779.  In Python 3, RawConfigParser grew a `strict` keyword
+        # option and in Python 3.2, this argument changed its default from
+        # False to True.  This breaks behavior compatibility with Python 2, so
+        # under Python 3, always force strict=False.
+        kws = {}
+        if sys.version_info >= (3,):
+            kws['strict'] = False
+        parser = RawConfigParser(**kws)
         parser.readfp(StringIO(conf_data), conf_filename)
         confs.append((conf_filename, parser, encoding_errors))
         if parser.has_option('meta', 'extends'):

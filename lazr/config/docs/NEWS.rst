@@ -7,6 +7,8 @@ NEWS for lazr.config
 - Always use old-style namespace package registration in ``lazr/__init__.py``
   since the mere presence of this file subverts PEP 420 style namespace
   packages.  (LP: #1407816)
+- For behavioral compatibility between Python 2 and 3, `strict=False` must be
+  passed to the underlying `RawConfigParser` under Python 3.  (LP: #1397779)
 
 2.0.1 (2014-08-22)
 ==================

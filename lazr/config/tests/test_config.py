@@ -203,3 +203,17 @@ multiline value 1
         self.meq(config['section_33'].key2, """\
 multiline value 1
 multiline value 2""")
+
+    def test_lp1397779(self):
+        # Fix DuplicateSectionErrors when you .push() a config that has a
+        # section already defined in the config.
+        schema = ConfigSchema(self._testfile('base.conf'))
+        config = schema.load(self._testfile('local.conf'))
+        self.assertEqual(config['section_1']['key1'], 'foo')
+        config.push('dupsec', """\
+[section_1]
+key1: baz
+[section_1]
+key1: qux
+""")
+        self.assertEqual(config['section_1']['key1'], 'qux')
