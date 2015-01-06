@@ -1338,6 +1338,5 @@ Other Documents
    :glob:
 
    *
-   docs/*
 
 .. _timedelta: http://docs.python.org/3/library/datetime.html#timedelta-objects
