@@ -2,7 +2,7 @@
 NEWS for lazr.config
 ====================
 
-2.1 (2015-XX-XX)
+2.1 (2015-01-05)
 ================
 - Always use old-style namespace package registration in ``lazr/__init__.py``
   since the mere presence of this file subverts PEP 420 style namespace
