@@ -20,13 +20,8 @@ import pkg_resources
 __version__ = pkg_resources.resource_string(
     "lazr.config", "version.txt").strip()
 
-# Re-export in such a way that __version__ can still be imported if
-# dependencies are not yet available.
-try:
-    # While we generally frown on "*" imports, this, combined with the fact we
-    # only test code from this module, means that we can verify what has been
-    # exported.
-    from lazr.config._config import *
-    from lazr.config._config import __all__
-except ImportError:
-    pass
+# While we generally frown on "*" imports, this, combined with the fact we
+# only test code from this module, means that we can verify what has been
+# exported.
+from lazr.config._config import *
+from lazr.config._config import __all__

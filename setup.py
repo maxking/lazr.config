@@ -40,7 +40,6 @@ files. The format supports schema validation.
 """,
     license='LGPL v3',
     install_requires=[
-        'nose',
         'setuptools',
         'zope.interface',
         'lazr.delegates',
