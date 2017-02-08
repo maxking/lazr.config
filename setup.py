@@ -16,13 +16,14 @@
 
 from setuptools import setup, find_packages
 
-__version__ = open("lazr/config/version.txt").read().strip()
+__version__ = open("src/lazr/config/version.txt").read().strip()
 
 setup(
     name='lazr.config',
     version=__version__,
     namespace_packages=['lazr'],
-    packages=find_packages(),
+    packages=find_packages('src'),
+    package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
     maintainer='LAZR Developers',

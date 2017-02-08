@@ -1194,7 +1194,7 @@ colon, otherwise an exception is raised.
     >>> as_username_groupname('foo')
     Traceback (most recent call last):
     ...
-    ValueError: need more than 1 value to unpack
+    ValueError: ...
 
 When both are given, the strings are returned unchanged or validated.
 
@@ -1328,7 +1328,7 @@ Non-log levels cannot be used here.
     >>> as_log_level('cheese')
     Traceback (most recent call last):
     ...
-    AttributeError: 'module' object has no attribute 'CHEESE'
+    AttributeError: ...
 
 
 Other Documents
