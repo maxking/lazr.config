@@ -7,8 +7,8 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
-   lazr/config/docs/usage
-   lazr/config/docs/NEWS
+   src/lazr/config/docs/usage
+   src/lazr/config/docs/NEWS
    HACKING
 
 

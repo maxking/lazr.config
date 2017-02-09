@@ -2,6 +2,20 @@
 NEWS for lazr.config
 ====================
 
+2.2 (2017-02-07)
+================
+- Fix tox import failure related to https://github.com/tox-dev/tox/issues/453
+  (LP: #1662701)
+- Don't catch ImportErrors that might occur when importing lazr.config._config
+  from lazr/config/__init__.py.  It's unnecessary and masks legitimate
+  ImportErrors of e.g. lazr.delegates.
+- setup.py: nose is not an install_requires, so move this dependency to
+  tox.ini. (LP: #1649726)
+- tox.ini: Add the py36 environment and drop py32, py33.  Ignore missing
+  interpreters.  Change to a temporary directory when running tox (to avoid
+  the above tox bug).  Invoke nose via -m instead of the mostly deprecated
+  ``python setup.py`` approach.
+
 2.1 (2015-01-05)
 ================
 - Always use old-style namespace package registration in ``lazr/__init__.py``
