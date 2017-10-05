@@ -49,7 +49,9 @@ copyright = u'2013-2015, LAZR developers'
 # built documents.
 #
 # The short X.Y version.
-version = open('src/lazr/config/version.txt').read().strip()
+with open('src/lazr/config/_version.py') as version_file:
+    exec(version_file.read())  # sets __version__
+version = __version__
 # The full version, including alpha/beta/rc tags.
 release = version
 
