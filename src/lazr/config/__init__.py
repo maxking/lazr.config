@@ -16,9 +16,8 @@
 
 """A configuration file system."""
 
-import pkg_resources
-__version__ = pkg_resources.resource_string(
-    "lazr.config", "version.txt").strip()
+from lazr.config._version import __version__
+__version__
 
 # While we generally frown on "*" imports, this, combined with the fact we
 # only test code from this module, means that we can verify what has been

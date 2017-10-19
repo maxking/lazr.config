@@ -16,7 +16,8 @@
 
 from setuptools import setup, find_packages
 
-__version__ = open("src/lazr/config/version.txt").read().strip()
+with open('src/lazr/config/_version.py') as version_file:
+    exec(version_file.read())  # sets __version__
 
 setup(
     name='lazr.config',

@@ -2,6 +2,11 @@
 NEWS for lazr.config
 ====================
 
+2.2.1 (2017-XX-XX)
+==================
+- Adjust versioning strategy to avoid importing pkg_resources, which is slow
+  in large environments.
+
 2.2 (2017-02-07)
 ================
 - Fix tox import failure related to https://github.com/tox-dev/tox/issues/453
