@@ -2,7 +2,7 @@
 NEWS for lazr.config
 ====================
 
-2.2.1 (2017-XX-XX)
+2.2.1 (2017-10-20)
 ==================
 - Adjust versioning strategy to avoid importing pkg_resources, which is slow
   in large environments.
